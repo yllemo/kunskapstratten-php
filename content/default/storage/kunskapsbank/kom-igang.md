@@ -37,5 +37,5 @@ en återanvändbar instruktion som kan köras mot valda dokument. Exemplet
 ## Drift och säkerhetskopiering
 
 Alla data ligger under `content/<bank-id>/storage`. Säkerhetskopiera hela
-`content`-mappen och `config.php`. Byt standardlösenordet `changeme` enligt
+`content`-mappen och `config.php`. Byt standardlösenordet `admin123` enligt
 instruktionerna i `README.md` innan webbplatsen används skarpt.

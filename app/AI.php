@@ -25,7 +25,7 @@ final class AI {
     }
     private function url(string $path): string {
         $base=rtrim($this->ai['base_url'],'/');
-        if ($this->ai['provider']==='ollama' && str_ends_with($base,'/v1')) $base=substr($base,0,-3);
+        if ($this->ai['provider']==='ollama') $base=preg_replace('~/(?:v1|api)$~','',$base);
         return $base.$path;
     }
     public function request(string $path, ?array $payload=null): array {
@@ -40,7 +40,7 @@ final class AI {
     private function handle(string $path): CurlHandle {
         $h=curl_init($this->url($path));
         $headers=['Content-Type: application/json'];
-        if ($this->ai['api_key']) $headers[]='Authorization: Bearer '.$this->ai['api_key'];
+        if ($this->ai['provider']!=='ollama' && $this->ai['api_key']) $headers[]='Authorization: Bearer '.$this->ai['api_key'];
         curl_setopt_array($h,[CURLOPT_HTTPHEADER=>$headers,CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>(int)$this->ai['timeout'],CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROTOCOLS=>CURLPROTO_HTTP|CURLPROTO_HTTPS]);
         return $h;
     }

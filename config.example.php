@@ -4,8 +4,8 @@ return [
     // Använd helst en absolut sökväg utanför webbserverns publika katalog.
     'content_root' => __DIR__ . '/content',
     'default_bank' => 'default',
-    // Standardlösenord: changeme. Ändra värdet i config.php.
-    'password' => 'changeme',
+    // Standardlösenord: admin123. Ändra värdet i config.php.
+    'password' => 'admin123',
     'title' => 'Kunskapstratten',
     'max_upload_mb' => 40,
     'ai' => [

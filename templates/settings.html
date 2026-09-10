@@ -21,12 +21,12 @@
       <p id="providerNote" class="settings-note"></p>
       <label><input type="checkbox" id="aiEnabled"> Använd AI</label>
       <label class="settings-field">Bas-URL<input id="aiBaseUrl" type="url" required></label>
-      <label class="settings-field">API-nyckel<input id="aiApiKey" type="password" autocomplete="off" placeholder="Lämna tomt för att behålla sparad nyckel"></label>
+      <label class="settings-field">API-nyckel<span class="api-key-row"><input id="aiApiKey" type="password" autocomplete="off" placeholder="Lämna tomt för att behålla sparad nyckel"><button id="toggleApiKey" type="button" class="btn-secondary" aria-label="Visa API-nyckel">Visa</button></span></label>
       <label><input type="checkbox" id="clearApiKey"> Ta bort sparad API-nyckel</label>
       <p class="settings-help">Sparas på serverns lokala disk i data/settings.json, inte i webbläsaren. Filen är inte krypterad och ska inte delas.</p>
       <label class="settings-field">Modell</label>
       <div class="model-row"><select id="aiModelSelect" aria-label="Tillgängliga modeller"><option value="">— skriv eller hämta —</option></select><button id="fetchModels" type="button" class="btn-secondary">Hämta</button></div>
-      <input id="aiModel" aria-label="Modellnamn" placeholder="gemma4:26b" required>
+      <input id="aiModel" aria-label="Modellnamn" placeholder="gemma3:4b" required>
       <label class="settings-field">Modell för ljudtranskribering<input id="aiTranscriptionModel" placeholder="whisper-1"></label>
       <p class="settings-help">För MP3/WAV krävs att AI-servern har stöd för transkribering. Chattmodellen används för text och bildbeskrivningar.</p>
       <label class="settings-field">Temperatur: <output id="temperatureValue">0.3</output><input id="aiTemperature" type="range" min="0" max="1" step="0.05" aria-describedby="temperatureHelp"></label>

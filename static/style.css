@@ -1198,3 +1198,7 @@ main {
 @media (prefers-reduced-motion: reduce) {
   .doc-card, .btn-primary, .btn-secondary { transition: none; }
 }
+
+.api-key-row { display:flex; gap:.45rem; align-items:center; }
+.api-key-row input { flex:1; min-width:0; }
+.api-key-row button { width:auto; margin:0; white-space:nowrap; }

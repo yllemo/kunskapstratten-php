@@ -90,7 +90,7 @@
       button.classList.toggle('active', button.dataset.provider === provider);
       button.setAttribute('aria-pressed', String(button.dataset.provider === provider));
     });
-    $('providerNote').textContent = provider === 'ollama' ? 'Ollama – använder det inbyggda API:t på port 11434. Adressen ska inte sluta med /v1.' : provider === 'lmstudio' ? 'LM Studio – starta den lokala servern. Standardport är 1234.' : 'OpenAI-kompatibel tjänst – ange serverns bas-URL inklusive /v1.';
+    $('providerNote').textContent = provider === 'ollama' ? 'Ollama – använder /api/tags och /api/chat på port 11434. Anropet görs från PHP-servern, som måste kunna nå adressen.' : provider === 'lmstudio' ? 'LM Studio – starta den lokala servern. Standardport är 1234.' : 'OpenAI-kompatibel tjänst – ange serverns bas-URL inklusive /v1.';
   }
   async function api(url, data) {
     const response = await fetch(url, data ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)} : {});
@@ -129,23 +129,33 @@
   };
   $('settingsClose').onclick = $('settingsCancel').onclick = () => { if (!resetBusy) dialog.close(); };
   document.querySelectorAll('[data-provider]').forEach(button => button.onclick = () => {
+    const current = $('aiBaseUrl').value.trim().replace(/\/$/, '');
+    const knownPreset = Object.values(presets).map(value => value.replace(/\/$/, '')).includes(current);
     provider = button.dataset.provider;
-    $('aiBaseUrl').value = presets[provider];
+    if (!current || knownPreset) $('aiBaseUrl').value = presets[provider];
     $('aiApiKey').value = '';
     $('clearApiKey').checked = true;
     $('aiModelSelect').replaceChildren(new Option('— skriv eller hämta —', ''));
     showProvider();
   });
+  $('toggleApiKey').onclick = () => {
+    const visible = $('aiApiKey').type === 'text';
+    $('aiApiKey').type = visible ? 'password' : 'text';
+    $('toggleApiKey').textContent = visible ? 'Visa' : 'Dölj';
+    $('toggleApiKey').setAttribute('aria-label', visible ? 'Visa API-nyckel' : 'Dölj API-nyckel');
+  };
   $('aiModelSelect').onchange = () => { if ($('aiModelSelect').value) $('aiModel').value = $('aiModelSelect').value; };
   $('aiTemperature').oninput = () => { $('temperatureValue').value = $('aiTemperature').value; };
   for (const [id, action] of [['fetchModels','models'], ['testConnection','test']]) {
     $(id).onclick = async () => {
       $(id).disabled = true;
       $('settingsStatus').textContent = 'Ansluter…';
+      const started = performance.now();
       try {
         const result = await api('/api/settings/' + action, values());
+        const elapsed = ((performance.now() - started) / 1000).toFixed(1);
         if (result.models) $('aiModelSelect').replaceChildren(new Option('— välj modell —', ''), ...result.models.map(model => new Option(model, model)));
-        $('settingsStatus').textContent = result.models ? `${result.models.length} modeller hittades.` : 'Anslutningen fungerar!';
+        $('settingsStatus').textContent = result.models ? `${result.models.length} modeller hittades på ${elapsed} s.` : `Anslutningen fungerar (${elapsed} s)!`;
       } catch(error) { $('settingsStatus').textContent = error.message; }
       finally { $(id).disabled = false; }
     };

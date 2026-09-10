@@ -6,7 +6,7 @@ pakethanterare.
 
 ## Lösenord
 
-Standardlösenordet är `changeme`. För att byta lösenord:
+Standardlösenordet är `admin123`. För att byta lösenord:
 
 1. Kopiera `config.example.php` till `config.php`.
 2. Öppna `config.php` och ändra värdet direkt:
@@ -34,7 +34,7 @@ att det egna lösenordet inte checkas in.
    `dom`, `xml`, `xmlreader`, `xmlwriter`, `simplexml`, `zip`, `fileinfo`, `gd`
    och `iconv`. Dessa ingår normalt i webbhotellets PHP-installation men kan
    behöva aktiveras i kontrollpanelen.
-4. Logga in med standardlösenordet `changeme`. För ett eget lösenord, kopiera
+4. Logga in med standardlösenordet `admin123`. För ett eget lösenord, kopiera
    `config.example.php` till `config.php` och ändra `password`.
 5. Ge PHP skrivbehörighet till `content/` och dess undermappar. Använd helst en
    innehållsmapp **utanför den publika webbkatalogen** och ange dess absoluta

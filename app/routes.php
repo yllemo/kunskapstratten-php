@@ -190,7 +190,7 @@ function settings_route(string $route,string $method): never {
         if(!$title || mb_strlen($title)>120 || !is_string($memory) || mb_strlen($memory)>200000 || !is_bool($d['preview_enabled']??false)) throw new RuntimeException('Ogiltig titel, minne eller förhandsvisning.',400);
         $st->write('data/MEMORY.md',$memory);$st->saveJson('data/settings.json',['version'=>1,'title'=>$title,'ai'=>$ai,'gui'=>['preview_enabled'=>$d['preview_enabled']??false]]);json_response(['ok'=>true]);
     }
-    $ai['timeout']=15;$ai['enabled']=true;$client=new AI($ai);
+    $ai['timeout']=10;$ai['enabled']=true;$client=new AI($ai);
     if($route==='/api/settings/models') json_response(['models'=>$client->models()]);
     if($route==='/api/settings/test') {$client->complete([['role'=>'user','content'=>'Svara OK.']]);json_response(['ok'=>true]);}
     throw new RuntimeException('Okänd inställningsåtgärd.',404);
