@@ -4,53 +4,21 @@ Fristående kunskapsbank för en vanlig PHP-webbserver. Serverkod, mallar,
 Markdown, YAML, AI-klient och import är vanlig PHP utan ramverk, Composer eller
 pakethanterare.
 
-## Sätt lösenord och password_hash – steg för steg
+## Lösenord
 
-**Standardlösenordet är `changeme`.** En fungerande hash finns redan i
-`config.example.php` och används även om `config.php` saknas. Du kan alltså
-ladda upp källkoden och logga in direkt med `changeme`. Följ stegen nedan när
-du vill byta till ett eget lösenord.
+Standardlösenordet är `changeme`. För att byta lösenord:
 
-Öppna `README.md` i en textredigerare; webbserverns regler blockerar avsiktligt
-adressen `/README.md`.
-
-1. Öppna PowerShell och kör följande på din dator:
-
-   ```powershell
-   cd kunskapstratten-php
-   php .\tools\password.php
-   ```
-
-2. Skriv ditt önskade lösenord (minst 12 tecken) och tryck Enter. Texten syns
-   när du skriver. Verktyget skriver ut en hash på en egen rad, exempelvis
-   en lång sträng som börjar med `$2y$`. Kopiera **hela den raden**.
-
-3. Kopiera `config.example.php` till `config.php` om `config.php` inte redan
-   finns. Öppna `config.php` i en textredigerare och ersätt den befintliga hashen på raden
+1. Kopiera `config.example.php` till `config.php`.
+2. Öppna `config.php` och ändra värdet direkt:
 
    ```php
-   'password_hash' => '$2y$12$k.EbQtuzasgr.V1ZUHqkD.BipzUa9TjRfwdm1yUHwANuYw4r9y2uG',
+   'password' => 'ditt-eget-lösenord',
    ```
 
-   med
+3. Spara filen och ladda upp den bredvid `index.php`.
 
-   ```php
-   'password_hash' => 'KLISTRA_IN_HELA_HASHEN_HÄR',
-   ```
-
-   Ersätt exempeltexten med den riktiga hashen. Behåll enkla citattecken och
-   kommatecknet. Klistra in hashen i textredigeraren, inte i ett
-   PowerShell-kommando där `$` kan tolkas som variabler. Övriga inställningar
-   i filen ska vara kvar.
-
-4. Spara filen och ladda upp `config.php` till samma katalog som `index.php`
-   på webbservern. Ladda om webbplatsen.
-
-5. Logga in med **lösenordet du skrev i steg 2**, inte med hashen.
-
-Du behöver inte köra kommandon på webbhotellet. Hashen skapas på din dator.
-På andra datorer med PHP installerat kan du använda `php tools/password.php`.
-För att byta lösenord upprepar du stegen och ersätter den gamla hashen.
+Alla kunskapsbanker använder samma lösenord. `config.php` ignoreras av Git så
+att det egna lösenordet inte checkas in.
 
 ## Ladda upp på webbserver
 
@@ -67,8 +35,7 @@ För att byta lösenord upprepar du stegen och ersätter den gamla hashen.
    och `iconv`. Dessa ingår normalt i webbhotellets PHP-installation men kan
    behöva aktiveras i kontrollpanelen.
 4. Logga in med standardlösenordet `changeme`. För ett eget lösenord, kopiera
-   `config.example.php` till `config.php` och ersätt `password_hash` enligt
-   guiden ovan.
+   `config.example.php` till `config.php` och ändra `password`.
 5. Ge PHP skrivbehörighet till `content/` och dess undermappar. Använd helst en
    innehållsmapp **utanför den publika webbkatalogen** och ange dess absoluta
    sökväg som `content_root` i `config.php`. Flytta då hela projektets
@@ -85,12 +52,12 @@ Alla interna länkar fungerar med `index.php?r=...`, även i en undermapp och
 utan URL-omskrivning. **Skyddet för privata kataloger måste ändå fungera.**
 Apache-konfigurationen medföljer i `.htaccess`; IIS-konfigurationen finns i
 `web.config` och kräver URL Rewrite. Låt inte servern exponera `content`,
-`app`, `templates` eller `tools` som statiska filer.
+`app` eller `templates` som statiska filer.
 
 För Nginx behövs motsvarande regler i serverkonfigurationen (anpassa `/kunskap/`):
 
 ```nginx
-location ~ ^/kunskap/(app|templates|content|tools)(/|$) { deny all; }
+location ~ ^/kunskap/(app|templates|content)(/|$) { deny all; }
 location ~ ^/kunskap/(config.*\.php|README\.md|run\.php|\.) { deny all; }
 location /kunskap/ { try_files $uri $uri/ /kunskap/index.php?$query_string; }
 location = /kunskap/index.php {
@@ -200,20 +167,6 @@ Standardbanken innehåller bara dokumentet **Kom igång med Kunskapstratten** oc
 exempelskillen **Sammanfatta dokument**. Inbox, importer, original och register
 är tomma. Källkoden innehåller inga API-nycklar, sparade AI-inställningar,
 personliga lösenord, minnesfiler eller testdata.
-
-För att kopiera ytterligare data utan att skriva över befintliga PHP-filer:
-
-```powershell
-php tools\migrate.php G:\_code\Python\Kunskapsbank
-```
-
-Verktyget utgår från Python-projektets standardmappar. Ett valfritt andra
-argument väljer målbank, exempelvis `php tools\migrate.php C:\källa ekonomi`.
-Vid egna sökvägar i Python-konfigurationen kopierar du motsvarande mappar till
-den valda bankens `content/<bank-id>/storage`.
-AI-inställningar och `MEMORY.md` förs inte över automatiskt; välj inställningar
-och kopiera önskat minnesinnehåll via gränssnittet. Säkerhetskopiera `content`
-och `config.php` före uppdatering. Skriv inte över dina data med paketets exempel.
 
 ## Kommandorad och verifiering
 

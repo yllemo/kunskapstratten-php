@@ -299,13 +299,13 @@ flowchart LR
   <section class="panel" id="panel-komigang">
     <p class="eyebrow">Praktiskt</p><h1 class="page-title">Kom igång på fem steg</h1>
     <ol class="step-list">
-      <li class="step"><span class="num">1</span><div class="body"><h3>Installera</h3><p>PHP 8.2+. Ladda upp ZIP-paketets innehåll och konfigurera lösenord i config.php.</p><pre>Inga externa PHP-bibliotek behövs.</pre></div></li>
+      <li class="step"><span class="num">1</span><div class="body"><h3>Installera</h3><p>PHP 8.2+. Ladda upp källkoden och ändra lösenordet i config.php.</p><pre>Inga externa PHP-bibliotek behövs.</pre></div></li>
       <li class="step"><span class="num">2</span><div class="body"><h3>Starta gränssnittet</h3><p>Kopiera config.example.php till config.php om du vill anpassa mappar. För lokal utveckling öppnar du http://127.0.0.1:8088.</p><pre>php -S 127.0.0.1:8088 index.php</pre></div></li>
       <li class="step"><span class="num">3</span><div class="body"><h3>Välj AI och minne</h3><p>Starta din modellserver. Öppna Inställningar, välj modell och testa anslutningen. Spara önskad titel och innehållet i MEMORY.md.</p></div></li>
       <li class="step"><span class="num">4</span><div class="body"><h3>Ladda upp och bearbeta</h3><p>Ladda upp dokument till inboxen och klicka Uppdatera. Markdown hamnar i KB och originalen i processed/. Inga skills genereras.</p></div></li>
       <li class="step"><span class="num">5</span><div class="body"><h3>Välj underlag och arbeta</h3><p>Chatta eller kör en skill på valda dokument. Redigera Markdown med Monaco och spara önskade resultat tillbaka till KB.</p></div></li>
     </ol>
-    <div class="highlight-box"><span class="ico">↪</span><div><h3>Efter uppgradering</h3><p>Starta om appen för att läsa den nya koden. Data från Python-versionen kopieras med php tools/migrate.php följt av sökvägen till Python-projektet. Befintliga filer och originalprojektet behålls.</p></div></div>
+    <div class="highlight-box"><span class="ico">↪</span><div><h3>Efter uppgradering</h3><p>Starta om appen för att läsa den nya koden. Säkerhetskopiera alltid content-mappen och config.php före en uppgradering.</p></div></div>
     <p><a href="https://github.com/yllemo/kunskapstratten" target="_blank" rel="noopener">Projektet på GitHub</a> · Se README.md för installation och detaljer.</p>
   </section>
 </main>

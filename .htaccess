@@ -1,7 +1,7 @@
 Options -Indexes
 DirectoryIndex index.php
 RewriteEngine On
-RewriteRule ^(?:app|templates|content|tools)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:app|templates|content)(?:/|$) - [F,L,NC]
 RewriteRule ^(?:config(?:\.example)?\.php|README\.md|run\.php|web\.config|\.) - [F,L,NC]
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]

@@ -27,22 +27,19 @@ try {
         $token=$_SERVER['HTTP_X_CSRF_TOKEN'] ?? $_POST['_csrf'] ?? '';
         if (!is_string($token) || !hash_equals($_SESSION['csrf'],$token)) throw new RuntimeException('Sidan har gått ut. Ladda om och försök igen.',403);
     }
-    $password=config()['password_hash'];
-    $local=in_array($_SERVER['REMOTE_ADDR'] ?? '',['127.0.0.1','::1'],true);
-    if (!$password && $local && !in_array(parse_url('http://'.($_SERVER['HTTP_HOST']??''),PHP_URL_HOST),['localhost','127.0.0.1','[::1]'],true)) throw new RuntimeException('Lokalt läge kräver localhost som värdnamn.',403);
-    if (!$password && !$local) {
+    $password=(string)(config()['password']??'');
+    if ($password==='') {
         http_response_code(503);
-        echo '<!doctype html><meta charset="utf-8"><h1>Slutför installationen</h1><p>Ange password_hash i config.php innan appen öppnas från nätverket. Se README.md.</p>'; exit;
+        echo '<!doctype html><meta charset="utf-8"><h1>Slutför installationen</h1><p>Ange password i config.php. Se README.md.</p>'; exit;
     }
-    if ($password && empty($_SESSION['authenticated'])) {
+    if (empty($_SESSION['authenticated'])) {
         $error='';
         if ($route==='/login' && $method==='POST') {
-            // Persistent per-client throttle, independent of session cookie resets.
             $key='auth-'.hash('sha256',$_SERVER['REMOTE_ADDR'] ?? '').'.json';
             $ok=store()->locked(function() use ($key,$password) {
                 $attempt=store()->json('logs/'.$key);
                 if (($attempt['until']??0)>time()) throw new RuntimeException('För många försök. Vänta en minut.',429);
-                if (password_verify((string)($_POST['password']??''),$password)) { store()->saveJson('logs/'.$key,[]); return true; }
+                if (hash_equals($password,(string)($_POST['password']??''))) { store()->saveJson('logs/'.$key,[]); return true; }
                 $count=($attempt['count']??0)+1;
                 store()->saveJson('logs/'.$key,['count'=>$count>=5?0:$count,'until'=>$count>=5?time()+60:0]); return false;
             });

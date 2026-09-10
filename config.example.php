@@ -4,9 +4,8 @@ return [
     // Använd helst en absolut sökväg utanför webbserverns publika katalog.
     'content_root' => __DIR__ . '/content',
     'default_bank' => 'default',
-    // Standardlösenord: changeme. Byt hash i config.php för eget lösenord.
-    // Tom hash tillåts endast när klienten är localhost.
-    'password_hash' => '$2y$12$k.EbQtuzasgr.V1ZUHqkD.BipzUa9TjRfwdm1yUHwANuYw4r9y2uG',
+    // Standardlösenord: changeme. Ändra värdet i config.php.
+    'password' => 'changeme',
     'title' => 'Kunskapstratten',
     'max_upload_mb' => 40,
     'ai' => [

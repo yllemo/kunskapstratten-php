@@ -12,7 +12,7 @@ function config(): array {
         $config = require dirname(__DIR__).'/config.example.php';
         if (is_file(dirname(__DIR__).'/config.php')) $config = array_replace_recursive($config, require dirname(__DIR__).'/config.php');
         if (getenv('KB_CONTENT_ROOT')) $config['content_root'] = getenv('KB_CONTENT_ROOT');
-        if (getenv('KB_PASSWORD_HASH') !== false) $config['password_hash'] = getenv('KB_PASSWORD_HASH');
+        if (getenv('KB_PASSWORD') !== false) $config['password'] = getenv('KB_PASSWORD');
     }
     return $config;
 }
