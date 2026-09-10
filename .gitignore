@@ -1,0 +1,28 @@
+# Lokal konfiguration och hemligheter
+/config.php
+
+# Banker som skapas av användaren
+/content/*
+!/content/.htaccess
+!/content/web.config
+!/content/default/
+
+# Versionshanterat minimalt startinnehåll i standardbanken
+/content/default/storage/data/*
+!/content/default/storage/data/registry.json
+/content/default/storage/inbox/*
+!/content/default/storage/inbox/.gitkeep
+/content/default/storage/logs/*
+!/content/default/storage/logs/.gitkeep
+/content/default/storage/processed/*
+!/content/default/storage/processed/.gitkeep
+/content/default/storage/operation.lock
+/content/default/storage/data/settings.json
+/content/default/storage/data/MEMORY.md
+
+# Operativsystem och editorer
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp

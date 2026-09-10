@@ -1,0 +1,71 @@
+<?php
+declare(strict_types=1);
+
+require __DIR__.'/Store.php';
+require __DIR__.'/AI.php';
+require __DIR__.'/Importer.php';
+require __DIR__.'/View.php';
+
+function config(): array {
+    static $config;
+    if ($config === null) {
+        $config = require dirname(__DIR__).'/config.example.php';
+        if (is_file(dirname(__DIR__).'/config.php')) $config = array_replace_recursive($config, require dirname(__DIR__).'/config.php');
+        if (getenv('KB_CONTENT_ROOT')) $config['content_root'] = getenv('KB_CONTENT_ROOT');
+        if (getenv('KB_PASSWORD_HASH') !== false) $config['password_hash'] = getenv('KB_PASSWORD_HASH');
+    }
+    return $config;
+}
+function bank_id(?string $candidate=null): string {
+    $env=getenv('KB_BANK');$id=$candidate ?? ($env!==false&&$env!==''?$env:($_SESSION['bank']??config()['default_bank']));
+    if(!is_string($id)||!preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/',$id))throw new RuntimeException('Ogiltig kunskapsbank.',400);
+    return$id;
+}
+function content_root(): string {
+    $root=config()['content_root'];if(!is_dir($root)&&!mkdir($root,0700,true))throw new RuntimeException('Content-mappen kunde inte skapas.');
+    $real=str_replace('\\','/',realpath($root));if(!$real)throw new RuntimeException('Content-mappen kunde inte läsas.');return$real;
+}
+function bank_path(string $id): string {return content_root().'/'.bank_id($id);}
+function ensure_bank(string $id,string $name=''): string {$id=bank_id($id);$root=bank_path($id);if(!is_dir($root)&&!mkdir($root,0700,true))throw new RuntimeException('Kunskapsbanken kunde inte skapas.');$meta=$root.'/bank.json';if(!is_file($meta))file_put_contents($meta,json_encode(['id'=>$id,'name'=>$name?:ucfirst($id),'created_at'=>gmdate('c')],JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE),LOCK_EX);return$root.'/storage';}
+function banks(): array {$out=[];foreach(scandir(content_root())as$id){if(str_starts_with($id,'.')||!preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/',$id)||!is_dir(content_root().'/'.$id.'/storage'))continue;$meta=[];$p=content_root().'/'.$id.'/bank.json';if(is_file($p))$meta=json_decode(file_get_contents($p),true)?:[];$out[]=['id'=>$id,'name'=>(string)($meta['name']??ucfirst($id))];}usort($out,fn($a,$b)=>strnatcasecmp($a['name'],$b['name']));return$out;}
+function store(): Store { static $stores=[];$id=bank_id();return $stores[$id]??=new Store(ensure_bank($id)); }
+function settings(): array {
+    $base = config();
+    return array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
+}
+function json_response(array $value, int $status = 200): never {
+    http_response_code($status); header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($value, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR); exit;
+}
+function input(): array {
+    $raw = file_get_contents('php://input');
+    if (strlen($raw) > 16*1024*1024) throw new RuntimeException('Begäran är för stor.', 413);
+    $data = json_decode($raw, true, 64, JSON_THROW_ON_ERROR);
+    if (!is_array($data)) throw new RuntimeException('Ogiltig begäran.', 400);
+    return $data;
+}
+function base_path(): string {
+    return rtrim(str_replace('\\','/',dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php')), '/.');
+}
+function app_url(string $path): string { return base_path().'/index.php?r='.rawurlencode($path); }
+function url_for(string $name, ...$args): string {
+    $routes = ['browse'=>'/browse','skills_page'=>'/skills','chat_page'=>'/chat','new_doc'=>'/new','upload_documents'=>'/upload','new_skill'=>'/skills/new','help_guide'=>'/help/guide', 'view_doc'=>'/doc/{relpath}', 'edit_doc'=>'/doc/{relpath}/edit','download_doc'=>'/doc/{relpath}/download','open_original'=>'/doc/{relpath}/original','doc_preview'=>'/api/doc-preview/{relpath}','save_doc'=>'/api/doc/{relpath}','save_skill'=>'/api/skill/{relpath}','edit_skill'=>'/skills/edit/{relpath}','run_skill_page'=>'/skills/run/{slug}','skill_documents'=>'/skills/documents/{slug}','delete_item'=>'/api/delete/{kind}/{relpath}'];
+    if ($name === 'static') return base_path().'/static/'.rawurlencode($args['filename']);
+    $path = $routes[$name] ?? throw new RuntimeException('Okänd route: '.$name);
+    foreach ($args as $key=>$value) if (str_contains($path,'{'.$key.'}')) { $path = str_replace('{'.$key.'}',(string)$value,$path); unset($args[$key]); }
+    return app_url($path).($args ? '&'.http_build_query($args) : '');
+}
+function redirect_to(string $url): never { header('Location: '.$url, true, 303); exit; }
+function markdown(string $text): string {
+    $text=str_replace("\r\n","\n",$text);$code=[];
+    $text=preg_replace_callback('/```([\w-]*)\n(.*?)```/s',function($m)use(&$code){$key='@@CODE'.count($code).'@@';$code[$key]='<pre><code class="language-'.h($m[1]).'">'.h($m[2]).'</code></pre>';return$key;},$text);
+    $text=h($text);
+    $text=preg_replace('/^######\s+(.+)$/m','<h6>$1</h6>',$text);$text=preg_replace('/^#####\s+(.+)$/m','<h5>$1</h5>',$text);$text=preg_replace('/^####\s+(.+)$/m','<h4>$1</h4>',$text);$text=preg_replace('/^###\s+(.+)$/m','<h3>$1</h3>',$text);$text=preg_replace('/^##\s+(.+)$/m','<h2>$1</h2>',$text);$text=preg_replace('/^#\s+(.+)$/m','<h1>$1</h1>',$text);
+    $text=preg_replace('/\*\*(.+?)\*\*/s','<strong>$1</strong>',$text);$text=preg_replace('/`([^`]+)`/','<code>$1</code>',$text);
+    $text=preg_replace_callback('/!\[([^]]*)\]\(([^ )]+)(?:\s+"[^"]*")?\)/',fn($m)=>'<img src="'.h(md_url(html_entity_decode($m[2]))).'" alt="'.$m[1].'">',$text);
+    $text=preg_replace_callback('/\[([^]]+)\]\(&lt;([^&]+)&gt;\)|\[([^]]+)\]\(([^ )]+)\)/',fn($m)=>'<a href="'.h(md_url(html_entity_decode($m[2]?:$m[4]))).'">'.($m[1]?:$m[3]).'</a>',$text);
+    $lines=explode("\n",$text);$out='';$list=false;
+    foreach($lines as $line){if(preg_match('/^[-*]\s+(.+)$/',$line,$m)){if(!$list){$out.='<ul>';$list=true;}$out.='<li>'.$m[1].'</li>';continue;}if($list){$out.='</ul>';$list=false;}if(str_starts_with($line,'<h')||str_starts_with($line,'<pre')||str_starts_with($line,'@@CODE'))$out.=$line;elseif(trim($line)==='')$out.="\n";else $out.='<p>'.$line.'</p>';}
+    if($list)$out.='</ul>';return strtr($out,$code);
+}
+function md_url(string $url): string {if(preg_match('~^(javascript|data|vbscript):~i',$url))return'#';if(str_starts_with($url,'/'))return app_url($url);return$url;}
