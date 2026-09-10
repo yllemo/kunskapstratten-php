@@ -126,16 +126,26 @@ exakt Markdown-formatering kan skilja sig från Python-versionens resultat.
 
 Läsarstödet för äldre Word beskrivs i [PHPWords dokumentation](https://phpoffice.github.io/PHPWord/usage/readers.html).
 
-AI-servern anropas från **webbservern**. `localhost` betyder därför webbservern,
-inte datorn där webbläsaren körs. För en AI-server på din egen dator behöver
-webbservern kunna nå den via en lämplig nätverksanslutning. Chatt och dokument
-skickas endast till den AI-adress du anger. Monaco, Mermaid och chattens
-Markdown-bibliotek hämtas från CDN, precis som i originalgränssnittet.
+OpenAI-kompatibla tjänster och LM Studio anropas från **webbservern**. Ollama
+är undantaget och anropas direkt från webbläsaren så att `127.0.0.1` avser
+besökarens egen dator. Chatt och dokument skickas endast till den AI-adress du
+anger. Monaco, Mermaid och chattens Markdown-bibliotek hämtas från CDN.
 
 För Ollama väljer du **Ollama** och använder normalt
-`http://127.0.0.1:11434` utan `/v1`. Appen använder Ollamas egna `/api/tags`
-och `/api/chat`. Klicka **Hämta** för att läsa installerade modeller, välj en
-modell och klicka sedan **Testa anslutning**.
+`http://127.0.0.1:11434` utan `/v1`. Ollama-anrop för modellhämtning, chatt och
+skills går direkt från besökarens webbläsare till datorn där Ollama körs.
+Webbhotellet försöker därför inte ansluta till sin egen localhost.
+
+Ollama måste tillåta webbplatsens origin. Avsluta Ollama, kör följande i
+PowerShell med webbplatsens riktiga adress och starta sedan Ollama igen:
+
+```powershell
+setx OLLAMA_ORIGINS "https://din-webbplats.se"
+```
+
+Klicka därefter **Hämta**, välj en installerad modell och klicka **Testa
+anslutning**. Serverbaserad AI-berikning under dokumentimport hoppas över när
+Ollama är valt, eftersom webbhotellet inte kan nå klientens dator.
 
 ## Lokal start
 

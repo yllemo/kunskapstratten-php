@@ -30,6 +30,7 @@
     contextWindow = settings.ai.context_window;
     CHAT_DATA.memory = settings.memory;
     CHAT_DATA.system_prompt = settings.ai.system_prompt;
+    CHAT_DATA.ai = {...CHAT_DATA.ai, ...settings.ai};
     chatInput.disabled = chatSendBtn.disabled = !settings.ai.enabled;
     document.querySelectorAll('.chat-model-label, .chat-meta').forEach(el => { el.textContent = settings.ai.model + ' · ' + settings.ai.base_url; });
     renderContextMeter();
@@ -249,6 +250,14 @@
     chatSendBtn.classList.toggle("stop", on);
   }
 
+  function sourceFooter(sources) {
+    const entries = Object.entries(sources || {});
+    if (!entries.length) return '';
+    let text = '\n\n---\n\n### Dokument i kontexten\n';
+    for (const [id, source] of entries) text += `\n- [${id}] ${source.title} — [Öppna .md](<${source.url}>)${source.original ? ` · [Öppna original](<${source.original}>)` : ''}`;
+    return text;
+  }
+
   async function send(question) {
     addBubble("user", question);
     history.push({ role: "user", content: question });
@@ -261,31 +270,34 @@
     abortCtrl = new AbortController();
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: history,
-          context_paths: Array.from(selected),
-          temporary_documents: temporaryDocuments,
-          skill: skillSelect ? skillSelect.value : "",
-        }),
-        signal: abortCtrl.signal,
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || "Något gick fel");
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        acc += decoder.decode(value, { stream: true });
+      const payload = {
+        messages: history,
+        context_paths: Array.from(selected),
+        temporary_documents: temporaryDocuments,
+        skill: skillSelect ? skillSelect.value : "",
+      };
+      if (CHAT_DATA.ai?.provider === 'ollama') {
+        const prepared = await postJSON('/api/chat/prepare', payload);
+        await window.localOllama.stream(CHAT_DATA.ai, prepared.messages, token => {
+          acc += token;
+          bubble.textContent = acc;
+          chatScroll.scrollTop = chatScroll.scrollHeight;
+        }, abortCtrl.signal);
+        acc += sourceFooter(prepared.sources);
         bubble.textContent = acc;
-        chatScroll.scrollTop = chatScroll.scrollHeight;
+      } else {
+        const res = await fetch("/api/chat", {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body:JSON.stringify(payload), signal:abortCtrl.signal,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error:res.statusText }));
+          throw new Error(err.error || "Något gick fel");
+        }
+        const reader=res.body.getReader(),decoder=new TextDecoder();
+        while(true){const {value,done}=await reader.read();if(done)break;acc+=decoder.decode(value,{stream:true});bubble.textContent=acc;chatScroll.scrollTop=chatScroll.scrollHeight;}
+        acc += decoder.decode();
       }
-      acc += decoder.decode();
       if (acc.trim()) history.push({ role: "assistant", content: acc });
       renderContextMeter();
     } catch (err) {

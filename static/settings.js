@@ -90,7 +90,7 @@
       button.classList.toggle('active', button.dataset.provider === provider);
       button.setAttribute('aria-pressed', String(button.dataset.provider === provider));
     });
-    $('providerNote').textContent = provider === 'ollama' ? 'Ollama – använder /api/tags och /api/chat på port 11434. Anropet görs från PHP-servern, som måste kunna nå adressen.' : provider === 'lmstudio' ? 'LM Studio – starta den lokala servern. Standardport är 1234.' : 'OpenAI-kompatibel tjänst – ange serverns bas-URL inklusive /v1.';
+    $('providerNote').textContent = provider === 'ollama' ? 'Ollama – anropas direkt från den här webbläsaren till din dator. Tillåt ' + location.origin + ' med OLLAMA_ORIGINS.' : provider === 'lmstudio' ? 'LM Studio – starta den lokala servern. Standardport är 1234.' : 'OpenAI-kompatibel tjänst – ange serverns bas-URL inklusive /v1.';
   }
   async function api(url, data) {
     const response = await fetch(url, data ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)} : {});
@@ -152,7 +152,12 @@
       $('settingsStatus').textContent = 'Ansluter…';
       const started = performance.now();
       try {
-        const result = await api('/api/settings/' + action, values());
+        const config = values().ai;
+        const result = provider === 'ollama'
+          ? (action === 'models'
+              ? {models:await window.localOllama.models(config)}
+              : {ok:Boolean(await window.localOllama.complete(config,[{role:'user',content:'Svara OK.'}]))})
+          : await api('/api/settings/' + action, values());
         const elapsed = ((performance.now() - started) / 1000).toFixed(1);
         if (result.models) $('aiModelSelect').replaceChildren(new Option('— välj modell —', ''), ...result.models.map(model => new Option(model, model)));
         $('settingsStatus').textContent = result.models ? `${result.models.length} modeller hittades på ${elapsed} s.` : `Anslutningen fungerar (${elapsed} s)!`;

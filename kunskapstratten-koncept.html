@@ -202,7 +202,7 @@ flowchart LR
     <div class="card-grid">
       <article class="pillar-card"><span class="ico">📁</span><h3>Filer, inte databas</h3><p>Markdown för innehåll och minne, JSON för importhistorik och GUI-inställningar. Inget vektorindex.</p></article>
       <article class="pillar-card"><span class="ico">🧩</span><h3>Du väljer uppgiften</h3><p>Välj en skill och de .md-filer som ska ingå. Samma kunskapsbank kan bearbetas på flera sätt.</p></article>
-      <article class="pillar-card"><span class="ico">⚙️</span><h3>Lokal AI som standard</h3><p>Ollama på localhost:11434 med gemma4:26b. Byt server och modell i GUI:t.</p></article>
+      <article class="pillar-card"><span class="ico">⚙️</span><h3>Lokal AI som standard</h3><p>Ollama på klientens 127.0.0.1:11434 med gemma3:4b. Byt adress och modell i GUI:t.</p></article>
       <article class="pillar-card"><span class="ico">🖥️</span><h3>Desktop och mobil</h3><p>Bläddra, ladda upp, redigera och chatta. Chatten använder hela höjden och har ett fast skrivfält.</p></article>
     </div>
     <div class="highlight-box"><span class="ico">🔒</span><div><h3>Du styr var AI-anropen hamnar</h3><p>Dokumenten lagras lokalt. Väljer du en extern AI-server skickas underlaget dit. Monaco, Mermaid och vissa resurser hämtas från CDN; helt offline är därför inte garanterat.</p></div></div>
@@ -282,7 +282,7 @@ flowchart LR
     <p class="lead">Dialogen har förval för Ollama, LM Studio och OpenAI-kompatibla tjänster.
       Hämta serverns modellista eller skriv ett modellnamn och testa anslutningen innan du sparar.</p>
     <div class="card-grid">
-      <article class="feature-card"><h3>Server och modell</h3><p>Bas-URL, API-nyckel, modell och aktivering av AI. Standard: Ollama på http://localhost:11434, modell gemma4:26b. API-klienten använder /v1.</p></article>
+      <article class="feature-card"><h3>Server och modell</h3><p>Bas-URL, API-nyckel, modell och aktivering av AI. Standard: Ollama på http://127.0.0.1:11434, modell gemma3:4b. Webbläsaren använder Ollamas /api/tags och /api/chat direkt.</p></article>
       <article class="feature-card"><h3>Temperatur och systemprompt</h3><p>Temperaturen används i chatt och skill-körningar. Chattens systemprompt kan anpassas; {context} infogar underlaget. Om markören saknas läggs kontexten till sist.</p></article>
       <article class="feature-card"><h3>Kontextstorlek</h3><p>Angivet tokenantal styr chattens uppskattning. Det ändrar inte serverns faktiska kontextstorlek. Standard är 32 768 tokens.</p></article>
       <article class="feature-card"><h3>Kunskapsbankens titel</h3><p>Visa exempelvis Demo1 i GUI:t. Projektet heter fortfarande Kunskapstratten och inga dokument, mappar eller register rensas.</p></article>
