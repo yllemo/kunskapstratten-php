@@ -143,18 +143,20 @@ function dispatch(string $route,string $method): never {
         $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
         if($route==='/api/markdown/plan')json_response(['chunks'=>MarkdownFormatter::chunks($raw,$selection),'ai_revision'=>MarkdownFormatter::configurationId($s['ai'])]);
         MarkdownFormatter::checkConfiguration($s['ai'],$d);
+        $level=$d['level']??'intensive';
+        if(!is_string($level)||!in_array($level,['light','normal','intensive'],true))throw new RuntimeException('Ogiltig uppsnyggningsnivå.',400);
         $parts=$d['parts']??null;$chunks=MarkdownFormatter::chunks($raw,$selection);
         if(!is_array($parts)||!array_is_list($parts)||count($parts)!==count($chunks))throw new RuntimeException('Ofullständigt AI-förslag. Texten behölls.',422);
         $tags=[];$bodies=[];
         foreach($parts as $i=>$part){
             if(!is_array($part)||!is_string($part['content']??null))throw new RuntimeException('Ogiltigt AI-förslag.',422);
             $response=json_encode(['body'=>$part['content'],'tags'=>$part['tags']??null],JSON_THROW_ON_ERROR);
-            $verified=MarkdownFormatter::result(Store::compose(['title'=>'Avsnitt'],$chunks[$i]),$response,false);
+            $verified=MarkdownFormatter::result(Store::compose(['title'=>'Avsnitt'],$chunks[$i]),$response,false,$level);
             [$meta,$body]=Store::parse($verified);$bodies[]=trim($body);$tags=array_merge($tags,$meta['tags']);
         }
         $source=$selection?Store::compose(['title'=>'Markerad text'],$raw):$raw;
         $response=json_encode(['body'=>implode("\n\n",$bodies),'tags'=>array_slice(array_values(array_unique($tags)),0,20)],JSON_THROW_ON_ERROR);
-        $content=MarkdownFormatter::result($source,$response,$kind==='skill');$report=MarkdownFormatter::report($source,$content);
+        $content=MarkdownFormatter::result($source,$response,$kind==='skill',$level);$report=MarkdownFormatter::report($source,$content);
         if($selection)$report['content']=MarkdownFormatter::fragment($raw,$content);
         json_response($report);
     }
@@ -174,7 +176,7 @@ function dispatch(string $route,string $method): never {
             if($s['ai']['provider']==='ollama')throw new RuntimeException('Ollama ska anropas från webbläsaren.',409);
             $response=MarkdownFormatter::generate($s['ai'],$raw,$kind==='skill',$level,$retry);
         } else {$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
-        $content=MarkdownFormatter::result($raw,$response,$kind==='skill');
+        $content=MarkdownFormatter::result($raw,$response,$kind==='skill',$level);
         $report=MarkdownFormatter::report($raw,$content);
         if($selection)$report['content']=MarkdownFormatter::fragment($source,$content);
         json_response($report);

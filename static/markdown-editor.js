@@ -75,7 +75,7 @@
       const result=await postJSON('/api/markdown/assemble',{...payload,parts,ai_revision:plan.ai_revision});
       if(read()!==cleanedDocument)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(merge(result.content));undo.hidden=false;
-      status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'AI gav ingen ändring av textens struktur efter genomgången.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';
+      status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? level.value==='intensive'?'Text och struktur omarbetade.':'Markdown-strukturen förbättrad.' : 'AI gav ingen ändring av textens struktur efter genomgången.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';
     } catch(error) {status.textContent=(cleaned&&read()===cleanedDocument?'Kodstädningen behölls, men AI-steget blev inte klart: ':'')+error.message;}
     finally {
       clearInterval(timer);

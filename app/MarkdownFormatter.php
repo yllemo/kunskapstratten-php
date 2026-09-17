@@ -151,8 +151,13 @@ PROMPT;
             'import'=>'Första import: återställ läsbar dokumentstruktur och metadata. Bevara redan fungerande disposition.',
             'light'=>'VARSAM redigering: reparera trasig Markdown, tabeller, blankrader och inkonsekventa rubriknivåer. Behåll befintlig disposition; skapa listor bara vid tydliga uppräkningar.',
             'normal'=>'TYDLIG STRUKTUR i redigeraren: gör en ny semantisk genomgång även om filen redan importerats. Bryt ut befintliga ämnesfraser som rubriker. Omvandla uppräkningar i löpande text till listor och återkommande fält till tabeller. Förbättra avsnittsindelning och rubrikhierarki.',
-            'intensive'=>'KRAFTIG STRUKTUR i redigeraren, en separat redaktionell genomgång efter importen: betrakta befintlig disposition som ett utkast. Omarbeta täta stycken till tydliga avsnitt och underavsnitt. Bryt ut befintliga etiketter/ämnesfraser som rubriker där de förekommer. Gör flera aktiviteter/krav/alternativ i samma stycke till separata listpunkter, också när de skiljs med meningar eller semikolon. Skapa tabeller av jämförbara poster med samma fält. Reparera tabeller och platt rubrikhierarki. Använd fetstil för befintliga viktiga etiketter vid behov. Sträva efter betydande, synliga förbättringar när texten behöver det. Ändra inte ord eller deras ordning; hitta inte på innehåll och gör inga kosmetiska ändringar bara för att få en diff.'
+            'intensive'=>'KRAFTIG STRUKTUR i redigeraren, en separat redaktionell genomgång efter importen: betrakta befintlig disposition som ett utkast. Omarbeta täta stycken till tydliga avsnitt och underavsnitt. Bryt ut befintliga etiketter/ämnesfraser som rubriker där de förekommer. Gör flera aktiviteter/krav/alternativ i samma stycke till separata listpunkter, också när de skiljs med meningar eller semikolon. Skapa tabeller av jämförbara poster med samma fält. Reparera tabeller och platt rubrikhierarki. Använd fetstil för befintliga viktiga etiketter vid behov. Sträva efter betydande, synliga förbättringar när texten behöver det. Skriv om meningar för bättre flyt och tydlighet, rätta språkfel och ta bort språkliga upprepningar utan att tappa information. Skapa nya beskrivande rubriker och kolumnrubriker. Flytta och gruppera innehåll inom avsnittet när det förbättrar läsbarheten. Bevara fakta, betydelse, namn, siffror, datum och villkor. Hitta inte på information och gör inte en kort sammanfattning i stället för ett fullständigt dokument.'
         ];
+        if($level==='intensive'){
+            $start=strpos($prompt,'Textskydd:');$end=strpos($prompt,'Kontrollera före svar:',$start);
+            $prompt=substr($prompt,0,$start)."Textskydd vid KRAFTIG OMSKRIVNING: Du får ändra ordval, meningsbyggnad, skiljetecken och ordning på prosan. Du får skapa nya rubriker, punktlistor och tabellrubriker. Bevara alla sakuppgifter och betydelsen; behåll namn, tal, datum, enheter och villkor. Ta inte bort unika uppgifter och hitta inte på nya fakta. Kodblock, indenterad kod, inline-kod, länkar, bilder och adresser ska bevaras exakt, men får flyttas tillsammans med sitt sammanhang.\n\n".substr($prompt,$end);
+            $prompt=str_replace(['Använd befintliga fältnamn som kolumnrubriker; om fältnamn saknas får rubrikcellerna vara tomma.','Exempel på aktiv strukturering utan att ändra texten:','Är hela originaltexten bevarad?'],['Skapa tydliga kolumnrubriker utifrån fältens betydelse.','Exempel på strukturering (du får även skriva om prosan):','Är alla sakuppgifter och betydelsen bevarade?'],$prompt);
+        }
         $prompt.="\n\nVALD NIVÅ: ".$directions[$level];
         if($retry)$prompt.="\nDen föregående genomgången gav ingen strukturändring. Granska på nytt efter uppräkningar i löptext, befintliga rubrikfraser, långa stycken och upprepade fält. Utför relevanta strukturändringar i body, inte bara metadata. Om texten redan är välstrukturerad får du bevara den.";
         return [['role'=>'system','content'=>$prompt],['role'=>'user','content'=>json_encode(['kind'=>$skill?'skill':'document','schema'=>self::schema($skill),'frontmatter'=>$meta,'body'=>$body],JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR)]];
@@ -168,20 +173,26 @@ PROMPT;
     }
     private static function protectedParts(string $body): array {
         preg_match_all('/^([ `~]*)(?:```|~~~)[^\n]*\n.*?^(?:```|~~~)[ \t]*$|`+[^`\n]+`+|!?\[[^\]\n]*\]\([^\)\n]*\)|^\s*\[[^\]\n]+\]:[^\n]*|https?:\/\/[^\s<>]+/ms',$body,$parts);
-        return array_map(fn($s)=>str_replace("\r\n","\n",$s),$parts[0]);
+        preg_match_all('/^(?: {4}|\t)[^\n]*(?:\n(?: {4}|\t)[^\n]*)*/m',$body,$indented);
+        return array_map(fn($s)=>str_replace("\r\n","\n",$s),array_merge($parts[0],$indented[0]));
     }
     public static function report(string $raw,string $content): array {
         [, $before]=Store::parse($raw);[$meta,$after]=Store::parse($content);
         return ['content'=>$content,'structure_changed'=>trim($before)!==trim($after),'tags'=>$meta['tags']];
     }
-    public static function result(string $raw,string $response,bool $skill): string {
+    public static function result(string $raw,string $response,bool $skill,string $level='import'): string {
+        if(!in_array($level,['import','light','normal','intensive'],true))throw new RuntimeException('Ogiltig uppsnyggningsnivå.',400);
         [$meta,$body]=Store::parse($raw);
         $response=trim($response);
         if(preg_match('/\A```(?:json)?\s*\n(.*)\n```\z/s',$response,$m))$response=$m[1];
         try {$data=json_decode($response,true,32,JSON_THROW_ON_ERROR);}catch(Throwable){throw new RuntimeException('AI:n skickade inte giltig JSON. Dokumentet har inte ändrats.',422);}
         if(!is_array($data)||!is_string($data['body']??null)||strlen($data['body'])>500000)throw new RuntimeException('AI:n skickade ett ogiltigt dokument.',422);
         $new=$data['body'];
-        if(str_starts_with($new,"---\n")||self::signature($body)!==self::signature($new)||self::protectedParts($body)!==self::protectedParts($new))throw new RuntimeException('AI:n ändrade ord, kod eller länkar. Förslaget stoppades och texten behölls.',422);
+        if(trim($new)===''||str_starts_with($new,"---\n"))throw new RuntimeException('AI:n skickade en tom text eller frontmatter i dokumenttexten. Förslaget stoppades.',422);
+        $beforeProtected=self::protectedParts($body);$afterProtected=self::protectedParts($new);
+        if($level==='intensive'){sort($beforeProtected);sort($afterProtected);}
+        if($beforeProtected!==$afterProtected)throw new RuntimeException('AI:n ändrade kod, länkar eller adresser. Förslaget stoppades och texten behölls.',422);
+        if($level!=='intensive'&&self::signature($body)!==self::signature($new))throw new RuntimeException('AI:n ändrade ord. Den valda nivån bevarar orden; välj Kraftig omskrivning för att tillåta omformulering.',422);
         foreach(['summary', $skill?'description':'title'] as $key){
             $value=$data[$key]??($key==='summary'?($data['description']??($meta['summary']??'')):($meta[$key]??''));
             if(!is_string($value)||mb_strlen($value)>2000)throw new RuntimeException('AI:n skickade ogiltig metadata.',422);
