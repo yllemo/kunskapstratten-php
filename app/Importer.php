@@ -97,8 +97,7 @@ final class Importer {
                     elseif($this->settings['ai']['provider']==='ollama')$meta['ai_format']='pending';
                     else {
                         try {
-                            $ai=$this->settings['ai'];$ai['temperature']=0;
-                            $response=(new AI($ai))->complete(MarkdownFormatter::messages($raw,false));
+                            $response=MarkdownFormatter::generate($this->settings['ai'],$raw);
                             [$meta,$body]=Store::parse(MarkdownFormatter::result($raw,$response,false));
                             $result['ai_formatted']=($result['ai_formatted']??0)+1;
                         }catch(Throwable $e){$meta['ai_format']='failed';$result['warnings'][]=basename($rel).': AI-formatering/taggar misslyckades; importerad text behölls. '.$e->getMessage();}

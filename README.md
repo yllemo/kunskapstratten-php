@@ -264,7 +264,7 @@ och skrivs i YAML även när AI är avstängd eller anropet misslyckas.
 
 AI-taggar ersätter de lokala förslagen när ett giltigt svar kommer. Saknad
 sammanfattning i ett i övrigt giltigt AI-svar kastar inte längre bort rubriker,
-tabeller och taggar. Ollama får ett JSON-schema för formateringssvaret.
+tabeller och taggar. Ollama, LM Studio och OpenAI-kompatibla tjänster använder samma instruktioner, JSON-schema och kontroll av ord, kod och länkar.
 
 **Uppdatera** reparerar också tidigare dokument med tomma taggar eller misslyckad
 AI-import (upp till 2 MB): kodbaserad struktur/taggar sparas och AI-steget
@@ -275,3 +275,10 @@ AI-instruktionerna för uppsnyggning bedömer nu hela dispositionen: logiska
 fält blir tabeller, även när texten från början är löpande prosa. Exemplen i
 prompten visar hur det görs utan att skriva om orden. AI:ns valda rubrikhierarki
 bevaras efter valideringen och skrivs inte över av den enklare kodheuristiken.
+
+AI-formateringen använder den aktuella AI-konfigurationen under Inställningar för
+både import och Snygga till. Ollama får schemat i `format`; LM Studio och
+OpenAI-kompatibla tjänster får `response_format` med `json_schema`. Om en äldre
+kompatibel server uttryckligen saknar stöd för detta görs ett nytt försök med
+samma instruktioner och samma efterkontroll. Byte av leverantör, adress eller
+modell under bearbetningen stoppar förslaget; starta då bearbetningen igen.

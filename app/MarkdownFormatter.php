@@ -28,7 +28,17 @@ final class MarkdownFormatter {
     public static function schema(bool $skill=false): array {
         $properties=['body'=>['type'=>'string'],'tags'=>['type'=>'array','items'=>['type'=>'string'],'minItems'=>1,'maxItems'=>20],'title'=>['type'=>'string'],'summary'=>['type'=>'string']];
         if($skill)$properties['description']=['type'=>'string'];
-        return ['type'=>'object','properties'=>$properties,'required'=>array_keys($properties)];
+        return ['type'=>'object','properties'=>$properties,'required'=>array_keys($properties),'additionalProperties'=>false];
+    }
+    public static function configurationId(array $ai): string {
+        return hash('sha256',json_encode(array_intersect_key($ai,array_flip(['provider','base_url','model','enabled','timeout'])),JSON_THROW_ON_ERROR));
+    }
+    public static function checkConfiguration(array $ai,array $request): void {
+        if(isset($request['ai_revision'])&&(!is_string($request['ai_revision'])||!hash_equals(self::configurationId($ai),$request['ai_revision'])))throw new RuntimeException('AI-inställningarna ändrades under bearbetningen. Klicka Snygga till eller Uppdatera igen.',409);
+    }
+    public static function generate(array $ai,string $raw,bool $skill=false): string {
+        $ai['temperature']=0;
+        return (new AI($ai))->complete(self::messages($raw,$skill),self::schema($skill));
     }
     /** Structural changes use existing text only; no invented headings or sentences. */
     public static function structure(string $body): string {

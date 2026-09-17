@@ -11,7 +11,7 @@ window.formatImportedDocuments = async result => {
         response='';
         await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
       }
-      await postJSON('/api/markdown/import-apply',{relpath,bank:prepared.bank,hash:prepared.hash,response});
+      await postJSON('/api/markdown/import-apply',{relpath,bank:prepared.bank,hash:prepared.hash,ai_revision:prepared.ai_revision,response});
       ingest.ai_formatted=(ingest.ai_formatted||0)+1;
     }catch(error){
       ingest.warnings.push(`${relpath}: AI-formatering/taggar inte klara. Texten behölls. ${error.message} Försök igen med Uppdatera.`);

@@ -2,6 +2,8 @@
 declare(strict_types=1);
 
 final class AI {
+    private int $responseStatus=0;
+    private string $responseBody="";
     public function __construct(private array $ai) {
         $key=$_SERVER['HTTP_X_KB_AI_KEY']??'';
         if(!is_string($key)||strlen($key)>8192||preg_match('/[^\x21-\x7e]/',$key))throw new RuntimeException('Ogiltig lokal API-nyckel.',400);
@@ -31,6 +33,7 @@ final class AI {
         $h=$this->handle($path); curl_setopt($h,CURLOPT_RETURNTRANSFER,true);
         if ($payload!==null) { curl_setopt($h,CURLOPT_POST,true); curl_setopt($h,CURLOPT_POSTFIELDS,json_encode($payload,JSON_THROW_ON_ERROR)); }
         $raw=curl_exec($h); $status=curl_getinfo($h,CURLINFO_RESPONSE_CODE); $error=curl_error($h); unset($h);
+        $this->responseStatus=$status;$this->responseBody=(string)$raw;
         if ($error || $status<200 || $status>=300) throw new RuntimeException($this->failure($status,$error,(string)$raw),502);
         $data=json_decode($raw,true);
         if (!is_array($data)) throw new RuntimeException('AI-servern skickade ett ogiltigt svar.',502);
@@ -43,13 +46,20 @@ final class AI {
         curl_setopt_array($h,[CURLOPT_HTTPHEADER=>$headers,CURLOPT_CONNECTTIMEOUT=>10,CURLOPT_TIMEOUT=>(int)$this->ai['timeout'],CURLOPT_FOLLOWLOCATION=>false,CURLOPT_PROTOCOLS=>CURLPROTO_HTTP|CURLPROTO_HTTPS]);
         return $h;
     }
-    public function complete(array $messages): string {
+    public function complete(array $messages, ?array $schema=null): string {
         if (!$this->ai['enabled']) throw new RuntimeException('Aktivera AI under Inställningar.',400);
         if($this->ai['provider']==='ollama') {
-            $data=$this->request('/api/chat',['model'=>$this->ai['model'],'messages'=>$this->ollamaMessages($messages),'options'=>['temperature'=>$this->ai['temperature']],'stream'=>false]);
+            $data=$this->request('/api/chat',['model'=>$this->ai['model'],'messages'=>$this->ollamaMessages($messages),'options'=>['temperature'=>$this->ai['temperature']],'stream'=>false]+($schema!==null?['format'=>$schema]:[]));
             $text=$data['message']['content'] ?? null;
         } else {
-            $data=$this->request('/chat/completions',['model'=>$this->ai['model'],'messages'=>$messages,'temperature'=>$this->ai['temperature'],'stream'=>false]);
+            $payload=['model'=>$this->ai['model'],'messages'=>$messages,'temperature'=>$this->ai['temperature'],'stream'=>false];
+            if($schema!==null)$payload['response_format']=['type'=>'json_schema','json_schema'=>['name'=>'markdown_document','strict'=>true,'schema'=>$schema]];
+            try {$data=$this->request('/chat/completions',$payload);}
+            catch(RuntimeException $e){
+                // Older compatible servers may reject structured output. Keep the same prompt and validation.
+                if($schema===null||!in_array($this->responseStatus,[400,422],true)||!preg_match('/response_format|json_schema/i',$this->responseBody)||!preg_match('/not supported|unsupported|does not support|unknown|unrecognized|not allowed|unexpected/i',$this->responseBody))throw $e;
+                unset($payload['response_format']);$data=$this->request('/chat/completions',$payload);
+            }
             $text=$data['choices'][0]['message']['content'] ?? null;
         }
         if (!is_string($text)) throw new RuntimeException('AI-servern skickade inget textsvar.',502); return $text;

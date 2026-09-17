@@ -42,6 +42,7 @@
       if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'. AI är avstängd. Granska och klicka Spara.';return;}
       status.textContent='Kodstädning klar. AI snyggar till struktur och frontmatter…';
       const prepared=await postJSON('/api/markdown/prepare',payload);
+      payload.ai_revision=prepared.ai_revision;
       let result;
       if(prepared.ai.provider==='ollama') {
         let response='';
