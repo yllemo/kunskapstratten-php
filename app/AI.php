@@ -57,7 +57,10 @@ final class AI {
             try {$data=$this->request('/chat/completions',$payload);}
             catch(RuntimeException $e){
                 // Older compatible servers may reject structured output. Keep the same prompt and validation.
-                if($schema===null||!in_array($this->responseStatus,[400,422],true)||!preg_match('/response_format|json_schema/i',$this->responseBody)||!preg_match('/not supported|unsupported|does not support|unknown|unrecognized|not allowed|unexpected/i',$this->responseBody))throw $e;
+                $unsupported=in_array($this->responseStatus,[400,422],true)&&preg_match('/response_format|json_schema/i',$this->responseBody)&&preg_match('/not supported|unsupported|does not support|unknown|unrecognized|not allowed|unexpected/i',$this->responseBody);
+                $repeating=preg_match('/token repeat limit|prediction aborted.*repeat|repetition limit/i',$this->responseBody);
+                if($schema===null||(!$unsupported&&!$repeating))throw $e;
+                if($repeating)$payload['temperature']=0.2;
                 unset($payload['response_format']);$data=$this->request('/chat/completions',$payload);
             }
             $text=$data['choices'][0]['message']['content'] ?? null;
@@ -133,6 +136,7 @@ final class AI {
     }
     private function failure(int $status,string $curlError,string $body): string {
         $detail=$curlError; if($detail===''){$json=json_decode($body,true);$detail=(string)($json['error']['message']??$json['error']??'');}
+        if(preg_match('/token repeat limit|repetition limit/i',$detail))return 'AI-modellen fastnade i tokenupprepning. Texten behölls. Prova en mindre markering, en annan modell eller Varsam nivå.';
         $detail=trim(preg_replace('/\s+/',' ',$detail));if(strlen($detail)>300)$detail=substr($detail,0,300).'…';
         return 'AI-anslutningen misslyckades'.($status?' (HTTP '.$status.')':'.').($detail!==''?' '.$detail:' Kontrollera adressen och att modellen finns.');
     }

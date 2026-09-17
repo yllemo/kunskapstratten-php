@@ -52,20 +52,27 @@
       payload.content=cleaned.content;
       if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+(selected?' Markerad text behandlad; övrig text och frontmatter behölls.':' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'.')+' AI är avstängd. Granska och klicka Spara.';return;}
       status.textContent='Kodstädning klar. AI arbetar med '+level.options[level.selectedIndex].text.toLowerCase()+(selected?' på markerad text…':' och frontmatter…');
-      let result;
-      for(let attempt=0;attempt<2;attempt++){
-        const request={...payload,retry:attempt>0};
-        const prepared=await postJSON('/api/markdown/prepare',request);
-        request.ai_revision=prepared.ai_revision;
-        if(prepared.ai.provider==='ollama') {
-          let response='';
-          await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
-          status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
-          result=await postJSON('/api/markdown/validate',{...request,response});
-        } else result=await postJSON('/api/markdown/format',request);
-        if(result.structure_changed||level.value==='light')break;
-        if(attempt===0)status.textContent='AI gav ingen strukturändring. Gör en fördjupad genomgång…';
+      const plan=await postJSON('/api/markdown/plan',payload);
+      const parts=[];
+      for(let index=0;index<plan.chunks.length;index++){
+        status.textContent='AI bearbetar avsnitt '+(index+1)+' av '+plan.chunks.length+'…';
+        let part;
+        for(let attempt=0;attempt<2;attempt++){
+          const request={...payload,content:plan.chunks[index],selection:true,ai_revision:plan.ai_revision,retry:attempt>0};
+          const prepared=await postJSON('/api/markdown/prepare',request);
+          if(prepared.ai_revision!==plan.ai_revision)throw new Error('AI-inställningarna ändrades. Starta uppsnyggningen igen.');
+          if(prepared.ai.provider==='ollama'){
+            let response='';
+            await window.localOllama.stream({...prepared.ai,temperature:0.15,format:prepared.schema},prepared.messages,token=>{response+=token;});
+            part=await postJSON('/api/markdown/validate',{...request,response});
+          }else part=await postJSON('/api/markdown/format',request);
+          if(part.structure_changed||level.value==='light')break;
+          if(attempt===0)status.textContent='Avsnitt '+(index+1)+': gör en fördjupad genomgång…';
+        }
+        parts.push(part);
       }
+      status.textContent='Kontrollerar och sammanfogar avsnitten…';
+      const result=await postJSON('/api/markdown/assemble',{...payload,parts,ai_revision:plan.ai_revision});
       if(read()!==cleanedDocument)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(merge(result.content));undo.hidden=false;
       status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'AI gav ingen ändring av textens struktur efter genomgången.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';

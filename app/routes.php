@@ -137,6 +137,27 @@ function dispatch(string $route,string $method): never {
         if($selection)$content=MarkdownFormatter::fragment($raw,$content);
         json_response(['content'=>$content,'cleanup_changed'=>$raw!==$content,'ai_enabled'=>$s['ai']['enabled'],'tags'=>$meta['tags']??[]]);
     }
+    if(in_array($route,['/api/markdown/plan','/api/markdown/assemble'],true)&&$post){
+        $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??null;$selection=($d['selection']??false)===true;
+        if(!is_string($raw)||strlen($raw)>100000||!is_string($rel)||!in_array($kind,['doc','skill'],true))throw new RuntimeException('Ogiltigt Markdown-dokument (max 100 kB).',400);
+        $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
+        if($route==='/api/markdown/plan')json_response(['chunks'=>MarkdownFormatter::chunks($raw,$selection),'ai_revision'=>MarkdownFormatter::configurationId($s['ai'])]);
+        MarkdownFormatter::checkConfiguration($s['ai'],$d);
+        $parts=$d['parts']??null;$chunks=MarkdownFormatter::chunks($raw,$selection);
+        if(!is_array($parts)||!array_is_list($parts)||count($parts)!==count($chunks))throw new RuntimeException('Ofullständigt AI-förslag. Texten behölls.',422);
+        $tags=[];$bodies=[];
+        foreach($parts as $i=>$part){
+            if(!is_array($part)||!is_string($part['content']??null))throw new RuntimeException('Ogiltigt AI-förslag.',422);
+            $response=json_encode(['body'=>$part['content'],'tags'=>$part['tags']??null],JSON_THROW_ON_ERROR);
+            $verified=MarkdownFormatter::result(Store::compose(['title'=>'Avsnitt'],$chunks[$i]),$response,false);
+            [$meta,$body]=Store::parse($verified);$bodies[]=trim($body);$tags=array_merge($tags,$meta['tags']);
+        }
+        $source=$selection?Store::compose(['title'=>'Markerad text'],$raw):$raw;
+        $response=json_encode(['body'=>implode("\n\n",$bodies),'tags'=>array_slice(array_values(array_unique($tags)),0,20)],JSON_THROW_ON_ERROR);
+        $content=MarkdownFormatter::result($source,$response,$kind==='skill');$report=MarkdownFormatter::report($source,$content);
+        if($selection)$report['content']=MarkdownFormatter::fragment($raw,$content);
+        json_response($report);
+    }
     if(in_array($route,['/api/markdown/prepare','/api/markdown/format','/api/markdown/validate'],true)&&$post) {
         $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??'';
         if(!is_string($raw)||strlen($raw)>100000||!trim($raw)||!in_array($kind,['doc','skill'],true)||!is_string($rel))throw new RuntimeException('Välj ett Markdown-dokument med högst 100 kB för AI-formatering.',400);

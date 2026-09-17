@@ -313,3 +313,30 @@ och ordning bevaras; nivåerna innebär ingen omskrivning av innehållet.
 Tydlig/Kraftig gör högst ett extra AI-försök om första förslaget saknar
 strukturändringar. Om AI fortfarande inte ändrar strukturen visas det tydligt.
 Oförändrad text och metadata får ingen ny `updated_at` enbart för att AI körts.
+
+### Tokenupprepning och HTTP 504 i OpenShift
+
+Snygga till bearbetar större texter avsnittsvis med separata anrop och visar
+vilket avsnitt som bearbetas. Uppdelning sker vid styckegränser; tabeller, listor
+och kodblock hålls ihop. Avsnitten och hela det sammanfogade dokumentet
+kontrolleras innan AI-förslaget visas. Om ett avsnitt misslyckas behålls
+kodstädningen och AI-förslaget tillämpas inte delvis.
+
+LM Studio/OpenAI-kompatibelt läge gör högst ett nytt försök utan tvingat
+JSON-schema om servern uttryckligen avbryter på grund av tokenupprepning.
+JSON-svaret och skyddet av ord, kod och länkar kontrolleras fortfarande.
+Uppsnyggningen använder temperatur 0,15; vid upprepningsförsöket 0,2.
+
+En långsam modell eller ett mycket stort sammanhängande avsnitt kan fortfarande
+ge HTTP 504. OpenShift har en separat timeout på sin Route, utöver PHP och AI:s
+timeout. Klusteradministratören kan till exempel sätta fem minuter:
+
+```sh
+oc annotate route <route-namn> -n <namespace> \
+  haproxy.router.openshift.io/timeout=300s --overwrite
+```
+
+Justera även eventuell Route framför själva AI-servern och PHP-/webbserverns
+tidsgränser vid behov. Använd den faktiska routen och namespace för installationen.
+Kodändringen ändrar inga klusterinställningar. Se [Red Hats dokumentation om
+Route-timeout](https://developers.redhat.com/articles/2025/07/02/how-haproxy-router-settings-affect-middleware-applications).

@@ -30,6 +30,21 @@ final class MarkdownFormatter {
         if($skill)$properties['description']=['type'=>'string'];
         return ['type'=>'object','properties'=>$properties,'required'=>array_keys($properties),'additionalProperties'=>false];
     }
+    public static function chunks(string $raw,bool $selection=false): array {
+        $body=$selection?$raw:Store::parse($raw)[1];
+        $chunks=[];$part='';$fence=null;
+        foreach(explode("\n",$body) as $line){
+            $part.=$line."\n";
+            if(preg_match('/^ {0,3}(`{3,}|~{3,})/',$line,$m)){
+                if($fence===null)$fence=[$m[1][0],strlen($m[1])];
+                elseif($m[1][0]===$fence[0]&&strlen($m[1])>=$fence[1]&&preg_match('/^ {0,3}[`~]+[ \t]*$/',$line))$fence=null;
+            }
+            // Split only between paragraphs; keep tables, lists and fenced code together.
+            if($fence===null&&trim($line)===''&&mb_strlen($part)>=1800){$chunks[]=rtrim($part,"\n");$part='';}
+        }
+        if(trim($part)!=='')$chunks[]=rtrim($part,"\n");
+        return $chunks?:[$body];
+    }
     public static function fragment(string $source,string $content): string {
         [, $body]=Store::parse($content);
         $body=rtrim($body,"\n");
@@ -42,7 +57,7 @@ final class MarkdownFormatter {
         if(isset($request['ai_revision'])&&(!is_string($request['ai_revision'])||!hash_equals(self::configurationId($ai),$request['ai_revision'])))throw new RuntimeException('AI-inställningarna ändrades under bearbetningen. Klicka Snygga till eller Uppdatera igen.',409);
     }
     public static function generate(array $ai,string $raw,bool $skill=false,string $level='import',bool $retry=false): string {
-        $ai['temperature']=0;
+        $ai['temperature']=0.15;
         return (new AI($ai))->complete(self::messages($raw,$skill,$level,$retry),self::schema($skill));
     }
     /** Structural changes use existing text only; no invented headings or sentences. */
