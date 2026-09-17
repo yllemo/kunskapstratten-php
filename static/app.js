@@ -111,7 +111,7 @@ if (reindexBtn) {
       const s = data.skills || {};
       showToast(
         `Klart: ${i.processed ?? 0} nya filer inlästa, ` +
-        `${s.skills ?? 0} bearbetningsskills tillgängliga. ${i.ai_formatted ?? 0} dokument AI-formaterade med uppdaterade taggar.` +
+        `${s.skills ?? 0} bearbetningsskills tillgängliga. ${i.ai_formatted ?? 0} dokument AI-formaterade med uppdaterade taggar. ${i.repaired ?? 0} tidigare dokument reparerade.` +
         (i.failed ? ` ${i.failed} fel: ${(i.errors || []).join('; ')}` : '') +
         ((i.warnings || []).length ? ` ${i.warnings.join('; ')}` : '')
       );

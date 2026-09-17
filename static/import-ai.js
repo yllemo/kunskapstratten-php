@@ -9,7 +9,7 @@ window.formatImportedDocuments = async result => {
       let response;
       if(prepared.ai.provider==='ollama'){
         response='';
-        await window.localOllama.stream({...prepared.ai,temperature:0},prepared.messages,token=>{response+=token;});
+        await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
       }
       await postJSON('/api/markdown/import-apply',{relpath,bank:prepared.bank,hash:prepared.hash,response});
       ingest.ai_formatted=(ingest.ai_formatted||0)+1;

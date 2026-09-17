@@ -5,7 +5,11 @@
   let editor = null, previous = null, busy = false;
   const read = () => editor ? editor.getValue() : area.value;
   function replace(text) {
-    if (editor) editor.executeEdits('ai-format', [{range:editor.getModel().getFullModelRange(),text}]);
+    if (editor) {
+      editor.executeEdits('ai-format', [{range:editor.getModel().getFullModelRange(),text}]);
+      if (editor.getValue() !== text) editor.setValue(text);
+      if (editor.getValue() !== text) throw new Error('Redigeraren kunde inte visa det formaterade dokumentet.');
+    }
     area.value = text;
   }
   if (window.require && !matchMedia('(max-width:760px)').matches) {
@@ -35,20 +39,20 @@
       if(read()!==original)throw new Error('Texten ändrades under städningen. Förslaget tillämpades inte.');
       previous=original;replace(cleaned.content);undo.hidden=false;
       payload.content=cleaned.content;
-      if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+' AI är avstängd; taggarna behölls. Granska och klicka Spara.';return;}
+      if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'. AI är avstängd. Granska och klicka Spara.';return;}
       status.textContent='Kodstädning klar. AI snyggar till struktur och frontmatter…';
       const prepared=await postJSON('/api/markdown/prepare',payload);
       let result;
       if(prepared.ai.provider==='ollama') {
         let response='';
-        await window.localOllama.stream({...prepared.ai,temperature:0},prepared.messages,token=>{response+=token;});
+        await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
         status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
         result=await postJSON('/api/markdown/validate',{...payload,response});
       } else result=await postJSON('/api/markdown/format',payload);
       if(read()!==cleaned.content)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(result.content);undo.hidden=false;
       status.textContent='Kodstädning klar. '+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'. Granska och klicka Spara.';
-    } catch(error) {status.textContent=(cleaned&&read()===cleaned.content?'Kodstädningen behölls, men AI-steget blev inte klart: ':'')+error.message;}
+    } catch(error) {status.textContent=(cleaned&&read()===cleaned.content?'Kodbaserade rubriker/tabeller och taggar behölls ('+cleaned.tags.join(', ')+'), men AI-steget blev inte klart: ':'')+error.message;}
     finally {
       clearInterval(timer);
       format.classList.remove('is-formatting');

@@ -90,6 +90,7 @@ final class Importer {
                 $name=pathinfo($rel,PATHINFO_FILENAME); $ext=strtolower(pathinfo($rel,PATHINFO_EXTENSION));
                 $meta=['title'=>$name,'tags'=>[],'summary'=>'','source_type'=>$ext,'source_hash'=>$hash,'converted_at'=>gmdate('c')];
                 if($ext==='md') { [$existing,$body]=Store::parse($body); $meta=array_replace($existing,$meta,['title'=>$existing['title']??$name,'tags'=>$existing['tags']??[],'summary'=>$existing['summary']??'']); }
+                [$meta,$body]=Store::parse(MarkdownFormatter::basic(Store::compose($meta,$body)));
                 if($this->settings['ai']['enabled']&&($this->settings['import']['ai_format']??true)) {
                     $raw=Store::compose($meta,$body);
                     if(strlen($raw)>100000){$meta['ai_format']='too_large';$result['warnings'][]=basename($rel).': texten importerades, men överstiger AI-formateringens gräns på 100 kB.';}
@@ -125,7 +126,17 @@ final class Importer {
             }
         }
         $result['format_documents']=[];
-        if($this->settings['ai']['enabled']&&($this->settings['import']['ai_format']??true))foreach($this->store->documents() as $doc)if(($doc['meta']['ai_format']??'')==='pending')$result['format_documents'][]=$doc['rel_path'];
+        foreach($this->store->documents() as $doc){
+            $state=$doc['meta']['ai_format']??'';$missingTags=!array_filter($doc['tags'],fn($tag)=>trim($tag)!=='');
+            if(($missingTags||$state==='failed')&&strlen($doc['raw'])<=2000000){
+                $raw=MarkdownFormatter::basic($doc['raw']);[$meta,$body]=Store::parse($raw);
+                if($this->settings['ai']['enabled']&&($this->settings['import']['ai_format']??true)&&strlen($raw)<=100000){$meta['ai_format']='pending';$state='pending';}
+                elseif($state==='failed'){$meta['ai_format']='local';$state='local';}
+                $this->store->write('kunskapsbank/'.$doc['rel_path'],Store::compose($meta,rtrim($body,"\n")));
+                $result['repaired']=($result['repaired']??0)+1;
+            }
+            if($this->settings['ai']['enabled']&&($this->settings['import']['ai_format']??true)&&$state==='pending')$result['format_documents'][]=$doc['rel_path'];
+        }
         return $result;
     }
 }

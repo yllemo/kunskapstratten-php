@@ -253,3 +253,19 @@ Om AI-anropet misslyckas finns den kodstädade texten kvar i redigeraren.
 **Ångra uppsnyggning** återställer originalet före båda stegen. Granska och
 klicka **Spara** för att spara filen. Kodstädning ändrar inte taggarnas betydelse;
 AI uppdaterar frontmatter/taggar när det är aktiverat.
+
+## Rubriker, tabeller och taggar även utan AI
+
+**Snygga till** skapar nu också rubriker från korta befintliga rubrikrader,
+normaliserar Markdown-tabeller, skapar saknade tabellavdelare och omvandlar
+sammanhängande tab-separerade rader till tabeller. Vanliga ord och deras ordning
+behålls; kod skyddas. Kortfattade taggförslag hämtas från dokumentets innehåll
+och skrivs i YAML även när AI är avstängd eller anropet misslyckas.
+
+AI-taggar ersätter de lokala förslagen när ett giltigt svar kommer. Saknad
+sammanfattning i ett i övrigt giltigt AI-svar kastar inte längre bort rubriker,
+tabeller och taggar. Ollama får ett JSON-schema för formateringssvaret.
+
+**Uppdatera** reparerar också tidigare dokument med tomma taggar eller misslyckad
+AI-import (upp till 2 MB): kodbaserad struktur/taggar sparas och AI-steget
+återförs till kön när det är aktiverat och texten ryms inom AI-gränsen.

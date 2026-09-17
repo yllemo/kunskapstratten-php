@@ -43,7 +43,7 @@
   async function stream(config, messages, onToken, signal) {
     const response = await request(baseUrl(config.base_url) + '/api/chat', {
       method:'POST', headers:{'Content-Type':'application/json'}, signal,
-      body:JSON.stringify({model:config.model,messages,stream:true,options:{temperature:config.temperature}}),
+      body:JSON.stringify({model:config.model,messages,...(config.format?{format:config.format}:{}),stream:true,options:{temperature:config.temperature}}),
     }, Number(config.timeout || 120) * 1000);
     const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
     while(true){const {value,done}=await reader.read();buffer+=decoder.decode(value||new Uint8Array(),{stream:!done});let pos;
