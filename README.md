@@ -207,3 +207,16 @@ som arbetskatalog. `watch` behövs inte för normal webbdrift.
 
 Webbhotellets PHP-konfiguration och en skarp AI-anslutning behöver kontrolleras
 på målservern.
+
+## Snygga till Markdown med AI
+
+I dokument- och skill-redigeraren finns **Snygga till med AI**. Funktionen använder
+texten i redigeraren, inklusive osparade ändringar, och föreslår Markdown-struktur,
+taggar och frontmatter. Dokumentets ord och ordning kontrolleras mot originalet;
+ändringar av kod och länkar stoppas också. Källkopplingar och egna metadatafält
+behålls. AI-förslaget visas i redigeraren och sparas först när du klickar **Spara**.
+**Ångra AI-formatering** återställer texten före senaste formateringen.
+
+AI måste vara aktiverad. Ollama körs direkt från webbläsaren; övriga tjänster
+använder din lokala API-nyckel eller reservnyckeln i config.php. Dokument över
+100 kB skickas inte, och texten trunkeras aldrig automatiskt.

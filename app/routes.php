@@ -113,6 +113,19 @@ function dispatch(string $route,string $method): never {
         json_response(['ok'=>true,'url'=>url_for('view_doc',relpath:substr($rel,13))]);
     }
     if($route==='/api/reindex' && $post) { set_time_limit(0);session_write_close();$result=(new Importer($st,$s))->process();json_response(['ingest'=>$result,'skills'=>['skills'=>count($st->skills())]]); }
+    if(in_array($route,['/api/markdown/prepare','/api/markdown/format','/api/markdown/validate'],true)&&$post) {
+        $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??'';
+        if(!is_string($raw)||strlen($raw)>100000||!trim($raw)||!in_array($kind,['doc','skill'],true)||!is_string($rel))throw new RuntimeException('Välj ett Markdown-dokument med högst 100 kB för AI-formatering.',400);
+        $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
+        if(!$s['ai']['enabled'])throw new RuntimeException('Aktivera AI under Inställningar.',400);
+        $messages=MarkdownFormatter::messages($raw,$kind==='skill');
+        if($route==='/api/markdown/prepare')json_response(['messages'=>$messages,'ai'=>array_intersect_key($s['ai'],array_flip(['provider','base_url','model','temperature','timeout','enabled']))]);
+        if($route==='/api/markdown/format') {
+            if($s['ai']['provider']==='ollama')throw new RuntimeException('Ollama ska anropas från webbläsaren.',409);
+            $ai=$s['ai'];$ai['temperature']=0;$response=(new AI($ai))->complete($messages);
+        } else {$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
+        json_response(['content'=>MarkdownFormatter::result($raw,$response,$kind==='skill')]);
+    }
     if(str_starts_with($route,'/api/settings')) settings_route($route,$method);
     if(preg_match('~^/api/delete/(doc|skill)/(.+)$~',$route,$m) && in_array($method,['GET','DELETE'],true)) {
         $plan=deletion_plan($m[1],$m[2]);

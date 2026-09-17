@@ -5,6 +5,7 @@ require __DIR__.'/Store.php';
 require __DIR__.'/AI.php';
 require __DIR__.'/DocumentConverter.php';
 require __DIR__.'/Importer.php';
+require __DIR__.'/MarkdownFormatter.php';
 require __DIR__.'/View.php';
 
 function config(): array {
