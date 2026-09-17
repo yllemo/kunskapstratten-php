@@ -282,3 +282,17 @@ OpenAI-kompatibla tjänster får `response_format` med `json_schema`. Om en äld
 kompatibel server uttryckligen saknar stöd för detta görs ett nytt försök med
 samma instruktioner och samma efterkontroll. Byte av leverantör, adress eller
 modell under bearbetningen stoppar förslaget; starta då bearbetningen igen.
+
+### Snygga till markerad text
+
+Markera text i redigeraren och klicka **Snygga till** för att bearbeta endast
+markeringen. Text utanför markeringen och dokumentets frontmatter bevaras.
+Utan markering bearbetas hela dokumentet, inklusive frontmatter och taggar.
+Markeringar i YAML-frontmatter hanteras genom att i stället köra hela dokumentet.
+Både Monaco och den vanliga textrutan stöds. **Ångra uppsnyggning** återställer
+hela texten före bearbetningen; ändringarna sparas först med **Spara**.
+
+Vid gateway-timeout kan webbhotellets tidsgräns ha nåtts. Markera en mindre del
+eller välj en snabbare modell. Ollamas tidsgräns gäller hela det strömmade svaret.
+Om AI ändrar ord, kod eller länkar stoppas AI-förslaget; kodstädningen kan behållas
+eller ångras.

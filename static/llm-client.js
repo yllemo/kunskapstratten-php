@@ -41,8 +41,13 @@
   }
 
   async function stream(config, messages, onToken, signal) {
+    const controller=new AbortController();
+    const abort=()=>controller.abort();
+    if(signal?.aborted)abort();else signal?.addEventListener('abort',abort,{once:true});
+    const timer=setTimeout(abort,Number(config.timeout||120)*1000);
+    try {
     const response = await request(baseUrl(config.base_url) + '/api/chat', {
-      method:'POST', headers:{'Content-Type':'application/json'}, signal,
+      method:'POST', headers:{'Content-Type':'application/json'}, signal:controller.signal,
       body:JSON.stringify({model:config.model,messages,...(config.format?{format:config.format}:{}),stream:true,options:{temperature:config.temperature}}),
     }, Number(config.timeout || 120) * 1000);
     const reader=response.body.getReader(),decoder=new TextDecoder();let buffer='';
@@ -51,6 +56,8 @@
       if(done)break;
     }
     if(buffer.trim()){const data=JSON.parse(buffer);if(data.error)throw new Error(data.error);if(data.message?.content)onToken(data.message.content);}
+    } catch(error){if(controller.signal.aborted&&!signal?.aborted)throw new Error('Ollama hann inte bearbeta texten inom tidsgränsen. Markera en mindre del eller välj en snabbare modell.');throw error;}
+    finally {clearTimeout(timer);signal?.removeEventListener('abort',abort);}
   }
 
   window.localOllama={models,complete,stream};

@@ -132,7 +132,9 @@ function dispatch(string $route,string $method): never {
         $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??null;
         if(!is_string($raw)||strlen($raw)>2000000||!is_string($rel)||!in_array($kind,['doc','skill'],true))throw new RuntimeException('Ogiltigt Markdown-dokument (max 2 MB).',400);
         $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
-        $content=MarkdownFormatter::basic($raw,$kind==='skill');[$meta]=Store::parse($content);
+        $selection=($d['selection']??false)===true;
+        $content=MarkdownFormatter::basic($selection?Store::compose(['title'=>'Markerad text'],$raw):$raw,$kind==='skill');[$meta]=Store::parse($content);
+        if($selection)$content=MarkdownFormatter::fragment($raw,$content);
         json_response(['content'=>$content,'cleanup_changed'=>$raw!==$content,'ai_enabled'=>$s['ai']['enabled'],'tags'=>$meta['tags']??[]]);
     }
     if(in_array($route,['/api/markdown/prepare','/api/markdown/format','/api/markdown/validate'],true)&&$post) {
@@ -140,6 +142,8 @@ function dispatch(string $route,string $method): never {
         if(!is_string($raw)||strlen($raw)>100000||!trim($raw)||!in_array($kind,['doc','skill'],true)||!is_string($rel))throw new RuntimeException('Välj ett Markdown-dokument med högst 100 kB för AI-formatering.',400);
         $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
         if(!$s['ai']['enabled'])throw new RuntimeException('Aktivera AI under Inställningar.',400);
+        $selection=($d['selection']??false)===true;$source=$raw;
+        if($selection)$raw=Store::compose(['title'=>'Markerad text'],$raw);
         $messages=MarkdownFormatter::messages($raw,$kind==='skill');
         if($route==='/api/markdown/prepare')json_response(['ai_revision'=>MarkdownFormatter::configurationId($s['ai']),'messages'=>$messages,'schema'=>MarkdownFormatter::schema($kind==='skill'),'ai'=>array_intersect_key($s['ai'],array_flip(['provider','base_url','model','temperature','timeout','enabled']))]);
         MarkdownFormatter::checkConfiguration($s['ai'],$d);
@@ -148,7 +152,9 @@ function dispatch(string $route,string $method): never {
             $response=MarkdownFormatter::generate($s['ai'],$raw,$kind==='skill');
         } else {$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
         $content=MarkdownFormatter::result($raw,$response,$kind==='skill');
-        json_response(MarkdownFormatter::report($raw,$content));
+        $report=MarkdownFormatter::report($raw,$content);
+        if($selection)$report['content']=MarkdownFormatter::fragment($source,$content);
+        json_response($report);
     }
     if(str_starts_with($route,'/api/settings')) settings_route($route,$method);
     if(preg_match('~^/api/delete/(doc|skill)/(.+)$~',$route,$m) && in_array($method,['GET','DELETE'],true)) {

@@ -25,9 +25,19 @@
     area.readOnly=value; editor?.updateOptions({readOnly:value});
   }
   undo.onclick = () => {if(previous!==null){replace(previous);previous=null;undo.hidden=true;status.textContent='Uppsnyggningen ångrades. Filen på disk är oförändrad.';}};
+  format.title='Snyggar till markerad text, eller hela dokumentet om inget är markerat.';
   format.onclick = async () => {
-    const original=read();let cleaned=null;const payload={content:original,relpath:data.relpath,kind:data.kind};
-    lock(true);status.textContent='Städar Markdown med kod…';
+    const original=read();
+    const selection=editor?editor.getSelection():null;
+    const start=editor?editor.getModel().getOffsetAt(selection.getStartPosition()):area.selectionStart;
+    const end=editor?editor.getModel().getOffsetAt(selection.getEndPosition()):area.selectionEnd;
+    const selected=end>start, source=selected?original.slice(start,end):original;
+    const frontmatter=original.match(/^(?:\uFEFF)?---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/);
+    if(selected&&frontmatter&&start<frontmatter[0].length){status.textContent='Markera text efter YAML-frontmatter, eller avmarkera för att snygga till hela dokumentet.';return;}
+    const merge=text=>selected?original.slice(0,start)+text+original.slice(end):text;
+    let cleaned=null, cleanedDocument=null;
+    const payload={content:source,selection:selected,relpath:data.relpath,kind:data.kind};
+    lock(true);status.textContent=selected?'Städar markerad text med kod…':'Städar hela dokumentet med kod…';
     format.classList.add('is-formatting');
     format.setAttribute('aria-busy','true');
     const started=Date.now();
@@ -37,9 +47,9 @@
     try {
       cleaned=await postJSON('/api/markdown/clean',payload);
       if(read()!==original)throw new Error('Texten ändrades under städningen. Förslaget tillämpades inte.');
-      previous=original;replace(cleaned.content);undo.hidden=false;
+      previous=original;cleanedDocument=merge(cleaned.content);replace(cleanedDocument);undo.hidden=false;
       payload.content=cleaned.content;
-      if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'. AI är avstängd. Granska och klicka Spara.';return;}
+      if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+(selected?' Markerad text behandlad; övrig text och frontmatter behölls.':' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'.')+' AI är avstängd. Granska och klicka Spara.';return;}
       status.textContent='Kodstädning klar. AI snyggar till struktur och frontmatter…';
       const prepared=await postJSON('/api/markdown/prepare',payload);
       payload.ai_revision=prepared.ai_revision;
@@ -50,10 +60,10 @@
         status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
         result=await postJSON('/api/markdown/validate',{...payload,response});
       } else result=await postJSON('/api/markdown/format',payload);
-      if(read()!==cleaned.content)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
-      previous=original;replace(result.content);undo.hidden=false;
-      status.textContent='Kodstädning klar. '+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'. Granska och klicka Spara.';
-    } catch(error) {status.textContent=(cleaned&&read()===cleaned.content?'Kodbaserade rubriker/tabeller och taggar behölls ('+cleaned.tags.join(', ')+'), men AI-steget blev inte klart: ':'')+error.message;}
+      if(read()!==cleanedDocument)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
+      previous=original;replace(merge(result.content));undo.hidden=false;
+      status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';
+    } catch(error) {status.textContent=(cleaned&&read()===cleanedDocument?'Kodstädningen behölls, men AI-steget blev inte klart: ':'')+error.message;}
     finally {
       clearInterval(timer);
       format.classList.remove('is-formatting');

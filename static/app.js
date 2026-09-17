@@ -82,6 +82,7 @@ async function postJSON(url, data) {
     body: JSON.stringify(data || {}),
   });
   if (!res.ok) {
+    if(res.status===504)throw new Error('AI-servern eller webbhotellet hann inte svara (HTTP '+res.status+'). Försök med en mindre markering eller en snabbare modell.');
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || "Något gick fel");
   }

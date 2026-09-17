@@ -30,6 +30,11 @@ final class MarkdownFormatter {
         if($skill)$properties['description']=['type'=>'string'];
         return ['type'=>'object','properties'=>$properties,'required'=>array_keys($properties),'additionalProperties'=>false];
     }
+    public static function fragment(string $source,string $content): string {
+        [, $body]=Store::parse($content);
+        $body=rtrim($body,"\n");
+        return $body.(str_ends_with($source,"\n")?"\n":'');
+    }
     public static function configurationId(array $ai): string {
         return hash('sha256',json_encode(array_intersect_key($ai,array_flip(['provider','base_url','model','enabled','timeout'])),JSON_THROW_ON_ERROR));
     }
