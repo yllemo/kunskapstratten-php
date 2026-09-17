@@ -24,19 +24,32 @@
   format.onclick = async () => {
     const original=read(),payload={content:original,relpath:data.relpath,kind:data.kind};
     lock(true);status.textContent='AI snyggar till Markdown och frontmatter…';
+    format.classList.add('is-formatting');
+    format.setAttribute('aria-busy','true');
+    const started=Date.now();
+    const progress=()=>{format.textContent='Arbetar… '+Math.floor((Date.now()-started)/1000)+' s';};
+    progress();
+    const timer=setInterval(progress,1000);
     try {
       const prepared=await postJSON('/api/markdown/prepare',payload);
       let result;
       if(prepared.ai.provider==='ollama') {
         let response='';
         await window.localOllama.stream({...prepared.ai,temperature:0},prepared.messages,token=>{response+=token;});
+        status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
         result=await postJSON('/api/markdown/validate',{...payload,response});
       } else result=await postJSON('/api/markdown/format',payload);
       if(read()!==original)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(result.content);undo.hidden=false;
       status.textContent='Markdown och frontmatter uppdaterade. Orden är kontrollerade. Granska och klicka Spara.';
     } catch(error) {status.textContent=error.message;}
-    finally {lock(false);}
+    finally {
+      clearInterval(timer);
+      format.classList.remove('is-formatting');
+      format.setAttribute('aria-busy','false');
+      format.textContent='Snygga till med AI';
+      lock(false);
+    }
   };
   save.onclick=async()=>{
     lock(true);status.textContent='Sparar…';

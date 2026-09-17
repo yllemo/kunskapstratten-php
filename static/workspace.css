@@ -158,3 +158,27 @@
   .chat-page .chat-composer { width:calc(100% - 1rem); }
   .chat-page .chat-meta { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 }
+
+/* Visible progress while AI formats the document, including validation. */
+#formatMarkdownBtn.is-formatting {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 1;
+  cursor: wait;
+}
+#formatMarkdownBtn.is-formatting::before {
+  content: "";
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 0.9rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: markdown-format-spin 0.8s linear infinite;
+}
+@keyframes markdown-format-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #formatMarkdownBtn.is-formatting::before { animation: none; }
+}
