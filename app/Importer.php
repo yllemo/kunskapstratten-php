@@ -16,13 +16,13 @@ final class Importer {
             return $this->legacyPowerPoint($path);
         }
         if ($ext==='pdf') {
-            $text=$this->pdfText(file_get_contents($path));
-            if (!trim($text)) throw new RuntimeException('PDF-filen saknar läsbar text. OCR-behandla den före import.',400);
+            $text=(new DocumentConverter($this->settings['import']??[]))->pdf(file_get_contents($path));
+            if (!trim($text)) throw new RuntimeException('PDF-filen saknar läsbar text.',400);
             return $text;
         }
-        if($ext==='xlsx') return $this->xlsx($path);
+        if(in_array($ext,['docx','pptx','xlsx'],true))return (new DocumentConverter($this->settings['import']??[]))->office($path,$ext);
         if($ext==='xls') return $this->binaryStrings($path,'äldre XLS');
-        if (in_array($ext,['docx','pptx','epub','zip'],true)) return $this->archive($path,$ext);
+        if (in_array($ext,['epub','zip'],true)) return $this->archive($path,$ext);
         if (in_array($ext,['png','jpg','jpeg','gif','bmp','webp'],true)) {
             if (!getimagesize($path)) throw new RuntimeException('Ogiltig bildfil.',400);
             if ($this->settings['ai']['enabled'] && $this->settings['ai']['provider']!=='ollama' && $this->settings['ai']['use_for_image_description']) {
@@ -52,12 +52,10 @@ final class Importer {
     }
     private function legacyPowerPoint(string $path): string {
         // MS-PPT records: TextCharsAtom (0x0FA0), TextBytesAtom (0x0FA8).
-        // Read OLE through the maintained spreadsheet library; never execute macros.
+        // Best-effort text extraction from legacy binary Office files.
         return $this->binaryStrings($path,'äldre PPT');
     }
     private function binaryStrings(string $path,string $label): string {$raw=file_get_contents($path);preg_match_all('/(?:[\x20-\x7E\x80-\xFF]\x00){4,}/',$raw,$w);preg_match_all('/[\x20-\x7E\x80-\xFF]{5,}/',$raw,$a);$lines=[];foreach($w[0]as$v)$lines[]=mb_convert_encoding($v,'UTF-8','UTF-16LE');foreach($a[0]as$v)if(preg_match('/[A-Za-z]{3}/',$v))$lines[]=mb_convert_encoding($v,'UTF-8','Windows-1252');$lines=array_values(array_unique(array_filter(array_map('trim',$lines))));if(!$lines)throw new RuntimeException("$label saknar läsbar text. Spara om till modernt format.",400);return "> Enkelt textutdrag ur $label.\n\n".implode("\n\n",array_slice($lines,0,20000));}
-    private function xlsx(string $path): string {$z=new ZipArchive();if($z->open($path)!==true)throw new RuntimeException('XLSX kunde inte öppnas.',400);try{$shared=[];if($xml=$z->getFromName('xl/sharedStrings.xml')){$d=new DOMDocument();@$d->loadXML($xml,LIBXML_NONET);foreach($d->getElementsByTagName('si')as$n)$shared[]=$n->textContent;}$out=[];for($i=1;$i<1000;$i++){if(($xml=$z->getFromName("xl/worksheets/sheet$i.xml"))===false)continue;$out[]="## Blad $i";$d=new DOMDocument();@$d->loadXML($xml,LIBXML_NONET);foreach($d->getElementsByTagName('row')as$r){$cells=[];foreach($r->getElementsByTagName('c')as$c){$v=$c->getElementsByTagName('v')->item(0)?->textContent??'';$cells[]=$c->getAttribute('t')==='s'?($shared[(int)$v]??''):$v;}$out[]='| '.implode(' | ',$cells).' |';}}if(!$out)throw new RuntimeException('XLSX saknar läsbara blad.',400);return implode("\n",$out);}finally{$z->close();}}
-    private function pdfText(string $raw): string {$out=[];preg_match_all('/\((?:\\.|[^\\)])*\)\s*Tj/s',$raw,$m);foreach($m[0]as$x){preg_match('/\((.*?)\)/s',$x,$p);$out[]=str_replace(['\\(', '\\)', '\\n'],['(',')',"\n"],$p[1]??'');}return trim(implode(' ',$out));}
     private function archive(string $path,string $ext): string {
         $zip=new ZipArchive(); if($zip->open($path)!==true) throw new RuntimeException('Arkivet kunde inte läsas.',400);
         try {
@@ -75,12 +73,7 @@ final class Importer {
                 if($ext==='epub' && !preg_match('~\.(xhtml|html|htm)$~i',$entry)) continue;
                 if($ext==='zip' && !preg_match('~\.(md|txt|csv|json|xml|html|htm)$~i',$entry)) continue;
                 $text=$zip->getFromName($entry);
-                if(in_array($ext,['docx','pptx'],true)) {
-                    $dom=new DOMDocument(); if(!@$dom->loadXML($text,LIBXML_NONET)) throw new RuntimeException('Ogiltig Office XML.',400);
-                    $xp=new DOMXPath($dom); $lines=[];
-                    foreach($xp->query('//*[local-name()="p"]') as $p) { $line=''; foreach($xp->query('.//*[local-name()="t"]',$p) as $t) $line.=$t->textContent; if($line!=='') $lines[]=$line; }
-                    $out[]=implode("\n\n",$lines);
-                } else $out[]='## '.$entry."\n\n".(preg_match('~\.x?html?$~i',$entry)?$this->html($text):$text);
+                $out[]='## '.$entry."\n\n".(preg_match('~\.x?html?$~i',$entry)?$this->html($text):$text);
             }
             if(!$out) throw new RuntimeException('Inget läsbart innehåll hittades i arkivet.',400);
             return implode("\n\n",$out);

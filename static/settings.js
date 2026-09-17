@@ -99,7 +99,7 @@
     return result;
   }
   function values() {
-    return {title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, api_key:$('aiApiKey').value, clear_api_key:$('clearApiKey').checked, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
+    return {import:{format:$('importFormat').value,tables:$('importTables').checked,separators:$('importSeparators').checked,pdf_lines:$('importPdfLines').value},title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, api_key:$('aiApiKey').value, clear_api_key:$('clearApiKey').checked, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
   }
   $('settingsBtn').onclick = async () => {
     clearReset();
@@ -109,6 +109,10 @@
     try {
       const data = await api('/api/settings');
       provider = data.ai.provider;
+      $('importFormat').value = data.import.format;
+      $('importTables').checked = data.import.tables;
+      $('importSeparators').checked = data.import.separators;
+      $('importPdfLines').value = data.import.pdf_lines;
       $('kbTitle').value = data.title;
       $('previewEnabled').checked = data.preview_enabled;
       $('kbMemory').value = data.memory;

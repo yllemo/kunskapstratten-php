@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require __DIR__.'/Store.php';
 require __DIR__.'/AI.php';
+require __DIR__.'/DocumentConverter.php';
 require __DIR__.'/Importer.php';
 require __DIR__.'/View.php';
 
@@ -31,7 +32,7 @@ function banks(): array {$out=[];foreach(scandir(content_root())as$id){if(str_st
 function store(): Store { static $stores=[];$id=bank_id();return $stores[$id]??=new Store(ensure_bank($id)); }
 function settings(): array {
     $base = config();
-    return array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
+    return array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'import'=>DocumentConverter::DEFAULTS, 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
 }
 function json_response(array $value, int $status = 200): never {
     http_response_code($status); header('Content-Type: application/json; charset=utf-8');
@@ -64,6 +65,9 @@ function markdown(string $text): string {
     $text=preg_replace('/\*\*(.+?)\*\*/s','<strong>$1</strong>',$text);$text=preg_replace('/`([^`]+)`/','<code>$1</code>',$text);
     $text=preg_replace_callback('/!\[([^]]*)\]\(([^ )]+)(?:\s+"[^"]*")?\)/',fn($m)=>'<img src="'.h(md_url(html_entity_decode($m[2]))).'" alt="'.$m[1].'">',$text);
     $text=preg_replace_callback('/\[([^]]+)\]\(&lt;([^&]+)&gt;\)|\[([^]]+)\]\(([^ )]+)\)/',fn($m)=>'<a href="'.h(md_url(html_entity_decode($m[2]?:$m[4]))).'">'.($m[1]?:$m[3]).'</a>',$text);
+    $text=preg_replace_callback('/^\|[^\n]*\|\n\|[ :|\-]+\|\n(?:\|[^\n]*\|(?:\n|$))*/m',function($m)use(&$code){
+        $rows=explode("\n",trim($m[0]));$html='<table><thead>';foreach($rows as $i=>$row){if($i===1)continue;$cells=preg_split('/(?<!\\\\)\|/',trim($row,'| '));$tag=$i===0?'th':'td';$html.='<tr>';foreach($cells as $cell)$html.='<'.$tag.'>'.str_replace(['\\|','&lt;br&gt;'],['|','<br>'],trim($cell)).'</'.$tag.'>';$html.='</tr>';if($i===0)$html.='</thead><tbody>';}$html.='</tbody></table>';$key='@@CODE'.count($code).'@@';$code[$key]=$html;return $key;
+    },$text);
     $lines=explode("\n",$text);$out='';$list=false;
     foreach($lines as $line){if(preg_match('/^[-*]\s+(.+)$/',$line,$m)){if(!$list){$out.='<ul>';$list=true;}$out.='<li>'.$m[1].'</li>';continue;}if($list){$out.='</ul>';$list=false;}if(str_starts_with($line,'<h')||str_starts_with($line,'<pre')||str_starts_with($line,'@@CODE'))$out.=$line;elseif(trim($line)==='')$out.="\n";else $out.='<p>'.$line.'</p>';}
     if($list)$out.='</ul>';return strtr($out,$code);

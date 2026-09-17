@@ -4,6 +4,7 @@
     <div class="settings-tabs" role="tablist" aria-label="Inställningskategorier">
       <button type="button" role="tab" id="tab-ai" aria-controls="panel-ai" aria-selected="true">AI</button>
       <button type="button" role="tab" id="tab-bank" aria-controls="panel-bank" aria-selected="false" tabindex="-1">Kunskapsbank</button>
+      <button type="button" role="tab" id="tab-import" aria-controls="panel-import" aria-selected="false" tabindex="-1">Import</button>
       <button type="button" role="tab" id="tab-memory" aria-controls="panel-memory" aria-selected="false" tabindex="-1">Minne</button>
       <button type="button" role="tab" id="tab-reset" aria-controls="panel-reset" aria-selected="false" tabindex="-1">Återställ</button>
     </div>
@@ -35,6 +36,15 @@
       <p class="settings-help">Används för uppskattningen i chatten. Ändrar inte modellserverns kontextstorlek.</p>
       <label class="settings-field">Systemprompt för chatt<textarea id="aiSystemPrompt" rows="5" placeholder="Tomt = standardprompt. {context} infogar minne och valda dokument."></textarea></label>
       <button id="testConnection" type="button" class="btn-secondary">Testa anslutning</button>
+      </section>
+      <section role="tabpanel" id="panel-import" aria-labelledby="tab-import" hidden>
+        <p class="settings-help">Inbyggd PHP-konvertering för PDF, DOCX, PPTX och XLSX. Ingen Python, OCR eller separat programvara behövs.</p>
+        <label class="settings-field">Formatering<select id="importFormat"><option value="structured">Markdown – rubriker och listor</option><option value="plain">Ren text – enklare formatering</option></select></label>
+        <label class="settings-toggle"><input type="checkbox" id="importTables"> Formatera Office-tabeller som Markdown</label>
+        <p class="settings-help">Avstängt: cellerna separeras med tabbar. Första tabellraden används som Markdown-rubrik. Sammanslagna celler förenklas.</p>
+        <label class="settings-toggle"><input type="checkbox" id="importSeparators"> Visa sidnummer i PDF och bildnummer i PowerPoint</label>
+        <label class="settings-field">PDF-radbrytningar<select id="importPdfLines"><option value="paragraphs">Sammanfoga rader till stycken</option><option value="lines">Behåll textrader</option></select></label>
+        <p class="settings-help">Inställningarna gäller nya importer i denna bank. PDF-layout och läsordning kan förenklas. Skannade PDF-bilder innehåller ingen text att hämta.</p>
       </section>
       <section role="tabpanel" id="panel-memory" aria-labelledby="tab-memory" hidden>
       <label class="settings-field">MEMORY.md<textarea id="kbMemory" rows="7" maxlength="200000" placeholder="Gemensamma fakta och instruktioner som alltid följer med i chatt och skill-körningar."></textarea></label>

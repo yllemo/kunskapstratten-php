@@ -32,7 +32,7 @@ att det egna lösenordet inte checkas in.
    till exempel till `public_html/kunskap/`.
 3. Servern behöver **PHP 8.2 eller senare** och tilläggen `curl`, `mbstring`,
    `dom`, `xml`, `xmlreader`, `xmlwriter`, `simplexml`, `zip`, `fileinfo`, `gd`
-   och `iconv`. Dessa ingår normalt i webbhotellets PHP-installation men kan
+   och `iconv`, samt `zlib` för komprimerade PDF:er. Dessa ingår normalt i webbhotellets PHP-installation men kan
    behöva aktiveras i kontrollpanelen.
 4. Logga in med standardlösenordet `admin123`. För ett eget lösenord, kopiera
    `config.example.php` till `config.php` och ändra `password`.
@@ -108,44 +108,33 @@ avbryter långa HTTP-anrop. AI-strömning kräver att proxy/FastCGI inte buffrar
 - Lösenordsinloggning för webbserver, CSRF-skydd, sökvägskontroll och fillås
   mellan importer, chattar, ändringar och återställning.
 
-Dokumentkonverteringen använder PHP-bibliotek i stället för MarkItDown, så
-exakt Markdown-formatering kan skilja sig från Python-versionens resultat.
+Dokumentkonverteringen är inbyggd PHP. Ingen Composer, Python, pip, OCR eller
+extern konverterare behövs. PHP-tilläggen `zip`, `dom`, `mbstring` och `zlib`
+måste vara aktiva på webbservern.
 
-| Format | Stöd och begränsning |
+| Format | Inbyggd konvertering |
 | --- | --- |
-| MD, TXT, HTML/HTM, CSV, JSON, XML | Inbyggd konvertering; HTML-skript körs inte. |
-| PDF | Textbaserade PDF-filer. Skannade PDF-filer behöver OCR före import. |
-| DOCX, PPTX | Text och stycken. Inbäddade bilder/diagram och avancerad layout återskapas inte. |
-| DOC | PHPWord-läsare; äldre eller ovanliga varianter kan behöva sparas om till DOCX. |
-| PPT | Textutdrag ur binära textposter; mallar, anteckningar och äldre sparningar kan ingå. PPTX ger bättre struktur. |
-| XLSX, XLS | Kalkylblad som Markdown-tabeller. Formler läses som formeltext och körs inte. |
-| EPUB | Textkapitel ur arkivet i filnamnsordning. |
-| ZIP | Textfiler i arkivet samlas i en artikel. Nästlade arkiv och binära bilagor hoppas över. |
-| PNG, JPG/JPEG, GIF, BMP, WebP | Bilden sparas; AI-beskrivning kräver att vald modell kan läsa bildformatet. |
-| MP3, WAV | Kräver `/audio/transcriptions` på vald AI-server och rätt transkriptionsmodell. En vanlig Ollama-chattmodell räcker inte. |
+| PDF | Textströmmar, komprimering, textarrayer och Unicode-teckenkartor. |
+| DOCX | Stycken, rubrikstilar, listor och tabeller. |
+| PPTX | Text, titlar och tabeller per bild. |
+| XLSX | Bladnamn, cellplacering, delade/inline-strängar och sparade formelresultat. |
+| DOC, PPT, XLS | Enkelt textutdrag ur äldre binärformat; spara helst om till DOCX/PPTX/XLSX. |
+| TXT, MD, HTML, CSV, JSON, XML | Text eller Markdown. |
+| EPUB, ZIP | Textinnehåll ur arkivet. |
+| Bilder | Originalbild och eventuell AI-beskrivning. |
+| MP3, WAV | Kräver separat AI-server med transkriberingsstöd. |
 
-Läsarstödet för äldre Word beskrivs i [PHPWords dokumentation](https://phpoffice.github.io/PHPWord/usage/readers.html).
+Under **Inställningar → Import** väljer du Markdown eller ren text, tabellformat,
+sid-/bildnummer och hur PDF-rader sammanfogas. Inställningarna sparas per bank
+och påverkar nya importer. För jämförelse av samma dokument kan du använda två
+banker med olika inställningar.
 
-OpenAI-kompatibla tjänster och LM Studio anropas från **webbservern**. Ollama
-är undantaget och anropas direkt från webbläsaren så att `127.0.0.1` avser
-besökarens egen dator. Chatt och dokument skickas endast till den AI-adress du
-anger. Monaco, Mermaid och chattens Markdown-bibliotek hämtas från CDN.
-
-För Ollama väljer du **Ollama** och använder normalt
-`http://127.0.0.1:11434` utan `/v1`. Ollama-anrop för modellhämtning, chatt och
-skills går direkt från besökarens webbläsare till datorn där Ollama körs.
-Webbhotellet försöker därför inte ansluta till sin egen localhost.
-
-Ollama måste tillåta webbplatsens origin. Avsluta Ollama, kör följande i
-PowerShell med webbplatsens riktiga adress och starta sedan Ollama igen:
-
-```powershell
-setx OLLAMA_ORIGINS "https://din-webbplats.se"
-```
-
-Klicka därefter **Hämta**, välj en installerad modell och klicka **Testa
-anslutning**. Serverbaserad AI-berikning under dokumentimport hoppas över när
-Ollama är valt, eftersom webbhotellet inte kan nå klientens dator.
+PDF-konverteringen återger text, inte exakt sidlayout. Kolumner och ovanliga
+fontkodningar kan ge förenklad eller ofullständig läsordning. Krypterade PDF:er
+måste sparas utan lösenord. Skannade PDF:er har ingen text att hämta och ger
+ett tydligt meddelande; OCR är inte ett installationskrav. Office-layout,
+sammanslagna celler och avancerad formatering förenklas. XLSX-formler körs inte;
+saknas ett sparat resultat blir cellen tom.
 
 ## Lokal start
 

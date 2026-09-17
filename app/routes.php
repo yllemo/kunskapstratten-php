@@ -183,7 +183,7 @@ function settings_route(string $route,string $method): never {
     $s=settings();$st=store();
     if($route==='/api/settings' && $method==='GET') {
         $ai=$s['ai'];$ai['has_api_key']=!empty($ai['api_key']);unset($ai['api_key']);
-        json_response(['title'=>$s['title'],'ai'=>$ai,'memory'=>is_file($st->path('data/MEMORY.md'))?$st->read('data/MEMORY.md'):'','preview_enabled'=>$s['gui']['preview_enabled']]);
+        json_response(['title'=>$s['title'],'ai'=>$ai,'import'=>$s['import'],'memory'=>is_file($st->path('data/MEMORY.md'))?$st->read('data/MEMORY.md'):'','preview_enabled'=>$s['gui']['preview_enabled']]);
     }
     if($method!=='POST')throw new RuntimeException('Metoden stöds inte.',405);
     $d=input();if(!is_array($d['ai']??null))throw new RuntimeException('AI-inställningar saknas.',400);
@@ -191,7 +191,8 @@ function settings_route(string $route,string $method): never {
     if($route==='/api/settings') {
         $title=trim($d['title']??'');$memory=$d['memory']??'';
         if(!$title || mb_strlen($title)>120 || !is_string($memory) || mb_strlen($memory)>200000 || !is_bool($d['preview_enabled']??false)) throw new RuntimeException('Ogiltig titel, minne eller förhandsvisning.',400);
-        $st->write('data/MEMORY.md',$memory);$st->saveJson('data/settings.json',['version'=>1,'title'=>$title,'ai'=>$ai,'gui'=>['preview_enabled'=>$d['preview_enabled']??false]]);json_response(['ok'=>true]);
+        $import=DocumentConverter::validate($d['import']??$s['import']);
+        $st->write('data/MEMORY.md',$memory);$st->saveJson('data/settings.json',['version'=>1,'title'=>$title,'ai'=>$ai,'import'=>$import,'gui'=>['preview_enabled'=>$d['preview_enabled']??false]]);json_response(['ok'=>true]);
     }
     $ai['timeout']=10;$ai['enabled']=true;
     if($ai['provider']==='ollama')throw new RuntimeException('Ollama testas direkt från webbläsaren.',409);
