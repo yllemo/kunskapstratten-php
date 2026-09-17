@@ -116,7 +116,7 @@ avbryter långa HTTP-anrop. AI-strömning kräver att proxy/FastCGI inte buffrar
   **＋ Bank**; valet sparas i den aktuella webbläsarsessionen.
 - Markdown-artiklar med YAML-frontmatter, Monaco på desktop, textfält på mobil,
   Markdown-nedladdning, originalfiler och valbar snabbförhandsvisning.
-- Filuppladdning, SHA-256-dubblettkontroll, valfri AI-metadata, bildbeskrivningar,
+- Filuppladdning, SHA-256-dubblettkontroll, valfri AI-formatering och frontmatter/taggar, bildbeskrivningar,
   arkivering av original och tydliga fel som låter misslyckade filer ligga kvar i inboxen.
 - Strömmande chatt, stoppknapp, valda KB-dokument, tillfälliga bilagor, gemensamt
   minne, tokenuppskattning, källhänvisningar och export till kunskapsbanken.
@@ -220,3 +220,22 @@ behålls. AI-förslaget visas i redigeraren och sparas först när du klickar **
 AI måste vara aktiverad. Ollama körs direkt från webbläsaren; övriga tjänster
 använder din lokala API-nyckel eller reservnyckeln i config.php. Dokument över
 100 kB skickas inte, och texten trunkeras aldrig automatiskt.
+
+## AI-formatering vid första importen
+
+**Inställningar → Import → Snygga till Markdown och uppdatera frontmatter/taggar
+med AI vid import** är aktiverat som standard. Med aktiverad AI använder importen
+samma instruktioner och kontroller som redigerarens knapp. Minst en giltig tagg
+krävs; taggar normaliseras och dubbletter tas bort. Titel, sammanfattning och
+uppdateringstid sparas i YAML tillsammans med befintliga källkopplingar.
+
+OpenAI-kompatibla tjänster kör AI-steget på servern. Med Ollama kör **Bearbeta nu**
+och **Uppdatera** steget i webbläsaren och sparar det validerade resultatet.
+Lämna sidan öppen tills det är klart. Vid avbrott ligger importen kvar med
+`ai_format: pending`; nästa Uppdatera försöker igen. CLI/cron med Ollama konverterar
+filen och lämnar AI-steget väntande till nästa uppdatering i webbläsaren.
+
+AI-fel eller förslag som ändrar ord behåller den konverterade texten och ger en
+varning. Dokument över 100 kB AI-formateras inte automatiskt. Avstängd AI eller
+avstängd AI-import ger vanlig PHP-konvertering. Redigerarknappen visar vilka
+taggar som föreslogs och om Markdown-strukturen ändrades eller behölls.

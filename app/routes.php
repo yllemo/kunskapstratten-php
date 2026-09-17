@@ -112,7 +112,21 @@ function dispatch(string $route,string $method): never {
         $st->write($rel,Store::compose(['title'=>$title,'tags'=>[$folder],'source_type'=>'md','converted_at'=>gmdate('c')],$body),true);
         json_response(['ok'=>true,'url'=>url_for('view_doc',relpath:substr($rel,13))]);
     }
-    if($route==='/api/reindex' && $post) { set_time_limit(0);session_write_close();$result=(new Importer($st,$s))->process();json_response(['ingest'=>$result,'skills'=>['skills'=>count($st->skills())]]); }
+    if($route==='/api/reindex' && $post) { set_time_limit(0);session_write_close();$result=(new Importer($st,$s))->process();json_response(['bank'=>bank_id(),'ingest'=>$result,'skills'=>['skills'=>count($st->skills())]]); }
+    if(in_array($route,['/api/markdown/import-prepare','/api/markdown/import-apply'],true)&&$post) {
+        $d=input();$rel=$d['relpath']??null;
+        if(!is_string($rel)||($d['bank']??bank_id())!==bank_id())throw new RuntimeException('Kunskapsbanken ändrades. Starta importen igen.',409);
+        $doc=$st->document($rel);$raw=$doc['raw'];
+        if(!$s['ai']['enabled']||!($s['import']['ai_format']??true)||($doc['meta']['ai_format']??'')!=='pending')throw new RuntimeException('Dokumentet väntar inte längre på AI-formatering.',409);
+        if(strlen($raw)>100000)throw new RuntimeException('Dokumentet är för stort för AI-formatering.',400);
+        $hash=hash('sha256',$raw);
+        if($route==='/api/markdown/import-prepare')json_response(['bank'=>bank_id(),'hash'=>$hash,'messages'=>MarkdownFormatter::messages($raw,false),'ai'=>array_intersect_key($s['ai'],array_flip(['provider','base_url','model','temperature','timeout','enabled']))]);
+        if(!is_string($d['hash']??null)||!hash_equals($hash,$d['hash']))throw new RuntimeException('Dokumentet ändrades under AI-bearbetningen. Förslaget sparades inte.',409);
+        if($s['ai']['provider']==='ollama'){$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
+        else {$ai=$s['ai'];$ai['temperature']=0;$response=(new AI($ai))->complete(MarkdownFormatter::messages($raw,false));}
+        $content=MarkdownFormatter::result($raw,$response,false);$st->write('kunskapsbank/'.$rel,$content);
+        json_response(MarkdownFormatter::report($raw,$content));
+    }
     if(in_array($route,['/api/markdown/prepare','/api/markdown/format','/api/markdown/validate'],true)&&$post) {
         $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??'';
         if(!is_string($raw)||strlen($raw)>100000||!trim($raw)||!in_array($kind,['doc','skill'],true)||!is_string($rel))throw new RuntimeException('Välj ett Markdown-dokument med högst 100 kB för AI-formatering.',400);
@@ -124,7 +138,8 @@ function dispatch(string $route,string $method): never {
             if($s['ai']['provider']==='ollama')throw new RuntimeException('Ollama ska anropas från webbläsaren.',409);
             $ai=$s['ai'];$ai['temperature']=0;$response=(new AI($ai))->complete($messages);
         } else {$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
-        json_response(['content'=>MarkdownFormatter::result($raw,$response,$kind==='skill')]);
+        $content=MarkdownFormatter::result($raw,$response,$kind==='skill');
+        json_response(MarkdownFormatter::report($raw,$content));
     }
     if(str_starts_with($route,'/api/settings')) settings_route($route,$method);
     if(preg_match('~^/api/delete/(doc|skill)/(.+)$~',$route,$m) && in_array($method,['GET','DELETE'],true)) {

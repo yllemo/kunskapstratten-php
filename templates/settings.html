@@ -40,6 +40,8 @@
       </section>
       <section role="tabpanel" id="panel-import" aria-labelledby="tab-import" hidden>
         <p class="settings-help">Inbyggd PHP-konvertering för PDF, DOCX, PPTX och XLSX. Ingen Python, OCR eller separat programvara behövs.</p>
+        <label class="settings-toggle"><input type="checkbox" id="importAiFormat"> Snygga till Markdown och uppdatera frontmatter/taggar med AI vid import</label>
+        <p class="settings-help">Aktiverat som standard. Kräver aktiverad AI. Ollama körs i webbläsaren efter konverteringen; lämna sidan öppen tills importen är klar. Vid AI-fel behålls texten och en varning visas.</p>
         <label class="settings-field">Formatering<select id="importFormat"><option value="structured">Markdown – rubriker och listor</option><option value="plain">Ren text – enklare formatering</option></select></label>
         <label class="settings-toggle"><input type="checkbox" id="importTables"> Formatera Office-tabeller som Markdown</label>
         <p class="settings-help">Avstängt: cellerna separeras med tabbar. Första tabellraden används som Markdown-rubrik. Sammanslagna celler förenklas.</p>

@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 /** Built-in text conversion; no executables, OCR or external libraries. */
 final class DocumentConverter {
-    public const DEFAULTS=['format'=>'structured','tables'=>true,'separators'=>true,'pdf_lines'=>'paragraphs'];
+    public const DEFAULTS=['format'=>'structured','tables'=>true,'separators'=>true,'pdf_lines'=>'paragraphs','ai_format'=>true];
     private array $options;
     public function __construct(array $options=[]) {$this->options=self::validate($options);}
     public static function validate(array $options): array {
         $o=array_replace(self::DEFAULTS,array_intersect_key($options,self::DEFAULTS));
-        if(!in_array($o['format'],['structured','plain'],true)||!in_array($o['pdf_lines'],['paragraphs','lines'],true)||!is_bool($o['tables'])||!is_bool($o['separators']))throw new RuntimeException('Ogiltiga importinställningar.',400);
+        if(!in_array($o['format'],['structured','plain'],true)||!in_array($o['pdf_lines'],['paragraphs','lines'],true)||!is_bool($o['tables'])||!is_bool($o['separators'])||!is_bool($o['ai_format']))throw new RuntimeException('Ogiltiga importinställningar.',400);
         return $o;
     }
     private function structured(): bool {return $this->options['format']==='structured';}

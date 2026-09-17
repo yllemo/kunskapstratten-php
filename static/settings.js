@@ -112,7 +112,7 @@
     return result;
   }
   function values() {
-    return {import:{format:$('importFormat').value,tables:$('importTables').checked,separators:$('importSeparators').checked,pdf_lines:$('importPdfLines').value},title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
+    return {import:{ai_format:$('importAiFormat').checked,format:$('importFormat').value,tables:$('importTables').checked,separators:$('importSeparators').checked,pdf_lines:$('importPdfLines').value},title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
   }
   $('settingsBtn').onclick = async () => {
     clearReset();
@@ -122,6 +122,7 @@
     try {
       const data = await api('/api/settings');
       provider = data.ai.provider;
+      $('importAiFormat').checked = data.import.ai_format;
       $('importFormat').value = data.import.format;
       $('importTables').checked = data.import.tables;
       $('importSeparators').checked = data.import.separators;

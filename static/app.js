@@ -85,7 +85,9 @@ async function postJSON(url, data) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || "Något gick fel");
   }
-  return res.json();
+  const result = await res.json();
+  if (url === '/api/reindex' && window.formatImportedDocuments) return window.formatImportedDocuments(result);
+  return result;
 }
 
 function showToast(message) {
@@ -109,7 +111,7 @@ if (reindexBtn) {
       const s = data.skills || {};
       showToast(
         `Klart: ${i.processed ?? 0} nya filer inlästa, ` +
-        `${s.skills ?? 0} bearbetningsskills tillgängliga.` +
+        `${s.skills ?? 0} bearbetningsskills tillgängliga. ${i.ai_formatted ?? 0} dokument AI-formaterade med uppdaterade taggar.` +
         (i.failed ? ` ${i.failed} fel: ${(i.errors || []).join('; ')}` : '') +
         ((i.warnings || []).length ? ` ${i.warnings.join('; ')}` : '')
       );

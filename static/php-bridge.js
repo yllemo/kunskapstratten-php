@@ -25,7 +25,7 @@
       if (localStorage.getItem(keyName) !== null) throw new Error('API-nyckeln kunde inte raderas.');
     }
   };
-  const aiRoutes = new Set(['/api/markdown/format', '/api/chat', '/api/skills/run', '/api/chat/temp-file', '/api/reindex', '/api/settings/models', '/api/settings/test']);
+  const aiRoutes = new Set(['/api/markdown/import-apply', '/api/markdown/format', '/api/chat', '/api/skills/run', '/api/chat/temp-file', '/api/reindex', '/api/settings/models', '/api/settings/test']);
   const originalFetch = window.fetch.bind(window);
   window.fetch = (input, options = {}) => {
     if (typeof input === 'string' && /^\/(api|browse|doc|skills|images|chat)(\/|$)/.test(input)) input = window.kbUrl(input);

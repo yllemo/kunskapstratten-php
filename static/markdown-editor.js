@@ -41,7 +41,7 @@
       } else result=await postJSON('/api/markdown/format',payload);
       if(read()!==original)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(result.content);undo.hidden=false;
-      status.textContent='Markdown och frontmatter uppdaterade. Orden är kontrollerade. Granska och klicka Spara.';
+      status.textContent=(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'. Granska och klicka Spara.';
     } catch(error) {status.textContent=error.message;}
     finally {
       clearInterval(timer);

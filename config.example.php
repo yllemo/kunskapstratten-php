@@ -20,7 +20,6 @@ return [
         'temperature' => 0.3,
         'context_window' => 32768,
         'system_prompt' => '',
-        'use_for_metadata_enrichment' => true,
         'use_for_image_description' => true,
         'timeout' => 120,
     ],
