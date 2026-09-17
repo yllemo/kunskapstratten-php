@@ -269,3 +269,9 @@ tabeller och taggar. Ollama får ett JSON-schema för formateringssvaret.
 **Uppdatera** reparerar också tidigare dokument med tomma taggar eller misslyckad
 AI-import (upp till 2 MB): kodbaserad struktur/taggar sparas och AI-steget
 återförs till kön när det är aktiverat och texten ryms inom AI-gränsen.
+
+AI-instruktionerna för uppsnyggning bedömer nu hela dispositionen: logiska
+ämnesbyten blir rubriker, självständiga uppräkningar blir listor och upprepade
+fält blir tabeller, även när texten från början är löpande prosa. Exemplen i
+prompten visar hur det görs utan att skriva om orden. AI:ns valda rubrikhierarki
+bevaras efter valideringen och skrivs inte över av den enklare kodheuristiken.
