@@ -2,6 +2,7 @@
   const $ = id => document.getElementById(id);
   const dialog = $('settingsDialog');
   let provider = 'ollama';
+  let serverHasKey = false;
   let resetToken = null;
   let resetBusy = false;
   const tabs = [...dialog.querySelectorAll('[role=tab]')];
@@ -83,7 +84,7 @@
     } finally { resetBusy = false; }
   };
   dialog.addEventListener('cancel', event => { if (resetBusy) event.preventDefault(); });
-  dialog.addEventListener('close', clearReset);
+  dialog.addEventListener('close', () => { clearReset(); $('aiApiKey').value = ''; });
   const presets = {openai: 'https://api.openai.com/v1', lmstudio: 'http://127.0.0.1:1234/v1', ollama: 'http://127.0.0.1:11434'};
   function showProvider() {
     document.querySelectorAll('[data-provider]').forEach(button => {
@@ -92,6 +93,18 @@
     });
     $('providerNote').textContent = provider === 'ollama' ? 'Ollama – anropas direkt från den här webbläsaren till din dator. Tillåt ' + location.origin + ' med OLLAMA_ORIGINS.' : provider === 'lmstudio' ? 'LM Studio – starta den lokala servern. Standardport är 1234.' : 'OpenAI-kompatibel tjänst – ange serverns bas-URL inklusive /v1.';
   }
+  function showKeyStatus() {
+    try {
+      const local = Boolean(window.kbApiKey.read());
+      $('apiKeyStatus').textContent = local ? 'Lokal nyckel finns i localStorage och används i första hand.' : serverHasKey ? 'Ingen lokal nyckel. Nyckeln i config.php används.' : 'Ingen lokal nyckel och ingen nyckel i config.php.';
+      $('clearApiKey').disabled = !local;
+    } catch (error) { $('apiKeyStatus').textContent = error.message; $('clearApiKey').disabled = false; }
+  }
+  $('clearApiKey').onclick = () => {
+    try { window.kbApiKey.remove(); $('aiApiKey').value = ''; showKeyStatus(); }
+    catch (error) { $('apiKeyStatus').textContent = 'Raderingen misslyckades: ' + error.message; }
+  };
+  window.addEventListener('storage', showKeyStatus);
   async function api(url, data) {
     const response = await fetch(url, data ? {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)} : {});
     const result = await response.json();
@@ -99,7 +112,7 @@
     return result;
   }
   function values() {
-    return {import:{format:$('importFormat').value,tables:$('importTables').checked,separators:$('importSeparators').checked,pdf_lines:$('importPdfLines').value},title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, api_key:$('aiApiKey').value, clear_api_key:$('clearApiKey').checked, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
+    return {import:{format:$('importFormat').value,tables:$('importTables').checked,separators:$('importSeparators').checked,pdf_lines:$('importPdfLines').value},title:$('kbTitle').value, memory:$('kbMemory').value, preview_enabled:$('previewEnabled').checked, ai:{provider, enabled:$('aiEnabled').checked, base_url:$('aiBaseUrl').value, model:$('aiModel').value, transcription_model:$('aiTranscriptionModel').value || 'whisper-1', temperature:Number($('aiTemperature').value), context_window:Number($('aiContextWindow').value), system_prompt:$('aiSystemPrompt').value}};
   }
   $('settingsBtn').onclick = async () => {
     clearReset();
@@ -118,8 +131,11 @@
       $('kbMemory').value = data.memory;
       $('aiEnabled').checked = data.ai.enabled;
       $('aiBaseUrl').value = data.ai.base_url;
-      $('aiApiKey').value = '';
-      $('clearApiKey').checked = false;
+      $('aiApiKey').value = window.kbApiKey.read();
+      serverHasKey = data.ai.has_api_key;
+      $('aiApiKey').type = 'password';
+      $('toggleApiKey').textContent = 'Visa';
+      showKeyStatus();
       $('aiModel').value = data.ai.model;
       $('aiTranscriptionModel').value = data.ai.transcription_model || 'whisper-1';
       $('aiModelSelect').replaceChildren(new Option('— skriv eller hämta —', ''));
@@ -127,7 +143,7 @@
       $('temperatureValue').value = data.ai.temperature;
       $('aiContextWindow').value = data.ai.context_window;
       $('aiSystemPrompt').value = data.ai.system_prompt;
-      $('settingsStatus').textContent = data.ai.has_api_key ? 'En API-nyckel är sparad.' : '';
+      $('settingsStatus').textContent = '';
       showProvider();
     } catch(error) { $('settingsStatus').textContent = error.message; }
   };
@@ -138,7 +154,7 @@
     provider = button.dataset.provider;
     if (!current || knownPreset) $('aiBaseUrl').value = presets[provider];
     $('aiApiKey').value = '';
-    $('clearApiKey').checked = true;
+    showKeyStatus();
     $('aiModelSelect').replaceChildren(new Option('— skriv eller hämta —', ''));
     showProvider();
   });
@@ -161,7 +177,15 @@
           ? (action === 'models'
               ? {models:await window.localOllama.models(config)}
               : {ok:Boolean(await window.localOllama.complete(config,[{role:'user',content:'Svara OK.'}]))})
-          : await api('/api/settings/' + action, values());
+          : await (async () => {
+              const headers = {'Content-Type':'application/json'};
+              const draft = $('aiApiKey').value.trim();
+              if (draft) headers['X-KB-AI-Key'] = draft;
+              const response = await fetch('/api/settings/' + action, {method:'POST', headers, body:JSON.stringify(values())});
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || 'Anslutningen misslyckades');
+              return data;
+            })();
         const elapsed = ((performance.now() - started) / 1000).toFixed(1);
         if (result.models) $('aiModelSelect').replaceChildren(new Option('— välj modell —', ''), ...result.models.map(model => new Option(model, model)));
         $('settingsStatus').textContent = result.models ? `${result.models.length} modeller hittades på ${elapsed} s.` : `Anslutningen fungerar (${elapsed} s)!`;
@@ -175,8 +199,11 @@
     const button = event.submitter;
     button.disabled = true;
     try {
+      const draftKey = $('aiApiKey').value.trim();
+      if (draftKey) window.kbApiKey.save(draftKey);
+      showKeyStatus();
       await api('/api/settings', values());
-      $('settingsStatus').textContent = 'Sparat på lokal disk.';
+      $('settingsStatus').textContent = 'Inställningar sparade. Lokal nyckel verifierad i webbläsaren.';
       document.querySelector('.brand').textContent = $('kbTitle').value;
       document.title = document.title.replace(/ – .*$/, '') + ' – ' + $('kbTitle').value;
       document.querySelector('.site-footer span').textContent = $('kbTitle').value + ' · körs lokalt på ' + location.host;

@@ -15,6 +15,7 @@ return [
         'model' => 'gemma3:4b',
         // Ljud kräver att samma AI-server stöder /audio/transcriptions.
         'transcription_model' => 'whisper-1',
+        // Reservnyckel på servern. En nyckel i webbläsarens localStorage har företräde.
         'api_key' => '',
         'temperature' => 0.3,
         'context_window' => 32768,

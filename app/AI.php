@@ -2,8 +2,13 @@
 declare(strict_types=1);
 
 final class AI {
-    public function __construct(private array $ai) {}
+    public function __construct(private array $ai) {
+        $key=$_SERVER['HTTP_X_KB_AI_KEY']??'';
+        if(!is_string($key)||strlen($key)>8192||preg_match('/[^\x21-\x7e]/',$key))throw new RuntimeException('Ogiltig lokal API-nyckel.',400);
+        if($key!=='')$this->ai['api_key']=$key;
+    }
     public static function validate(array $values, array $old): array {
+        $values=array_diff_key($values,array_flip(['api_key','clear_api_key']));
         $ai=array_replace($old,array_intersect_key($values,$old));
         foreach (['base_url','model','provider','system_prompt','api_key','transcription_model'] as $k) {
             if (!is_string($ai[$k]) || strlen($ai[$k])>50000) throw new RuntimeException('Ogiltigt textfält: '.$k,400);
@@ -15,12 +20,6 @@ final class AI {
         if (!is_numeric($ai['temperature']) || $ai['temperature']<0 || $ai['temperature']>1 || !is_numeric($ai['context_window']) || $ai['context_window']<256 || $ai['context_window']>10000000) throw new RuntimeException('Ogiltig temperatur eller kontextstorlek.',400);
         $ai['temperature']=(float)$ai['temperature']; $ai['context_window']=(int)$ai['context_window'];
         $ai['enabled']=(bool)$ai['enabled'];
-        if (!empty($values['clear_api_key'])) $ai['api_key']='';
-        elseif (empty($values['api_key'])) {
-            $a=parse_url($old['base_url']);
-            $same=($url['scheme']??'')===($a['scheme']??'') && ($url['host']??'')===($a['host']??'') && ($url['port']??null)===($a['port']??null);
-            $ai['api_key']=$same ? $old['api_key'] : '';
-        }
         return $ai;
     }
     private function url(string $path): string {

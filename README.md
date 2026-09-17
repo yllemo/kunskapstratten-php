@@ -46,7 +46,27 @@ att det egna lösenordet inte checkas in.
 Alla kunskapsbanker delar samma inloggningslösenord. Varje bank har egna
 dokument, skills, importer, inställningar och minne. Det finns inte separata
 användarkonton.
-API-nyckeln sparas på servern och returneras inte till webbläsaren.
+Din egen API-nyckel sparas i webbläsarens localStorage under Inställningar → AI.
+Status visar om den finns; Radera lokal nyckel tar bort den direkt. En lokal
+nyckel prioriteras framför `ai.api_key` i `config.php`. Serverns nyckel
+returneras aldrig till webbläsaren. Lokal nyckel gäller alla banker i samma
+installation och webbläsare, och skickas till PHP vid AI-anrop utan att sparas
+i bankinställningar. CLI/cron använder alltid nyckeln i `config.php`.
+Tidigare nycklar i `data/settings.json` används inte och tas bort nästa gång
+du sparar inställningarna.
+
+För serverns reservnyckel, ange följande i `config.php` (lägg till i befintlig `ai`-sektion):
+
+```php
+'ai' => [
+    'api_key' => 'din-servernyckel',
+],
+```
+
+**Spara** lagrar den personliga nyckeln i localStorage och kontrollerar att den
+kan läsas tillbaka. **Visa** visar din lokala nyckel; **Testa anslutning** provar
+nyckeln mot vald AI-tjänst. **Radera lokal nyckel** raderar direkt, även om du
+sedan avbryter dialogen. Den lokala nyckeln behålls över omladdning och utloggning.
 
 Alla interna länkar fungerar med `index.php?r=...`, även i en undermapp och
 utan URL-omskrivning. **Skyddet för privata kataloger måste ändå fungera.**

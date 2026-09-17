@@ -32,7 +32,10 @@ function banks(): array {$out=[];foreach(scandir(content_root())as$id){if(str_st
 function store(): Store { static $stores=[];$id=bank_id();return $stores[$id]??=new Store(ensure_bank($id)); }
 function settings(): array {
     $base = config();
-    return array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'import'=>DocumentConverter::DEFAULTS, 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
+    $settings=array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'import'=>DocumentConverter::DEFAULTS, 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
+    // API keys are supplied by config.php or the current browser request, never bank settings.
+    $settings['ai']['api_key']=$base['ai']['api_key'];
+    return $settings;
 }
 function json_response(array $value, int $status = 200): never {
     http_response_code($status); header('Content-Type: application/json; charset=utf-8');

@@ -4,7 +4,7 @@ declare(strict_types=1);
 function dispatch(string $route,string $method): never {
     $st=store(); $s=settings(); $post=$method==='POST';
     if($route==='/banks/select'&&$post){$id=bank_id((string)($_POST['bank']??''));if(!is_dir(bank_path($id).'/storage'))throw new RuntimeException('Kunskapsbanken finns inte.',404);$_SESSION['bank']=$id;redirect_to(url_for('browse'));}
-    if($route==='/banks/create'&&$post){$name=trim((string)($_POST['name']??''));if($name===''||mb_strlen($name)>80)throw new RuntimeException('Ange ett namn med högst 80 tecken.',400);$id=bank_slug($name);if(is_dir(bank_path($id)))throw new RuntimeException('En kunskapsbank med det namnet finns redan.',409);ensure_bank($id,$name);$_SESSION['bank']=$id;$new=new Store(bank_path($id).'/storage');$base=config();$new->saveJson('data/settings.json',['version'=>1,'title'=>$name,'ai'=>$base['ai'],'gui'=>['preview_enabled'=>false]]);redirect_to(url_for('browse'));}
+    if($route==='/banks/create'&&$post){$name=trim((string)($_POST['name']??''));if($name===''||mb_strlen($name)>80)throw new RuntimeException('Ange ett namn med högst 80 tecken.',400);$id=bank_slug($name);if(is_dir(bank_path($id)))throw new RuntimeException('En kunskapsbank med det namnet finns redan.',409);ensure_bank($id,$name);$_SESSION['bank']=$id;$new=new Store(bank_path($id).'/storage');$base=config();unset($base['ai']['api_key']);$new->saveJson('data/settings.json',['version'=>1,'title'=>$name,'ai'=>$base['ai'],'gui'=>['preview_enabled'=>false]]);redirect_to(url_for('browse'));}
     if ($route==='/help/guide' && $method==='GET') { header('Content-Type: text/html; charset=utf-8'); readfile(dirname(__DIR__).'/kunskapstratten-koncept.html'); exit; }
     if ($route==='/browse' && $method==='GET') browse_page();
     if ($route==='/api/stats' && $method==='GET') { $docs=$st->documents(); json_response(['documents'=>count($docs),'tags'=>count(array_unique(array_merge(...array_column($docs,'tags'))))]); }
@@ -192,7 +192,8 @@ function settings_route(string $route,string $method): never {
         $title=trim($d['title']??'');$memory=$d['memory']??'';
         if(!$title || mb_strlen($title)>120 || !is_string($memory) || mb_strlen($memory)>200000 || !is_bool($d['preview_enabled']??false)) throw new RuntimeException('Ogiltig titel, minne eller förhandsvisning.',400);
         $import=DocumentConverter::validate($d['import']??$s['import']);
-        $st->write('data/MEMORY.md',$memory);$st->saveJson('data/settings.json',['version'=>1,'title'=>$title,'ai'=>$ai,'import'=>$import,'gui'=>['preview_enabled'=>$d['preview_enabled']??false]]);json_response(['ok'=>true]);
+        $savedAi=$ai;unset($savedAi['api_key']);
+        $st->write('data/MEMORY.md',$memory);$st->saveJson('data/settings.json',['version'=>1,'title'=>$title,'ai'=>$savedAi,'import'=>$import,'gui'=>['preview_enabled'=>$d['preview_enabled']??false]]);json_response(['ok'=>true]);
     }
     $ai['timeout']=10;$ai['enabled']=true;
     if($ai['provider']==='ollama')throw new RuntimeException('Ollama testas direkt från webbläsaren.',409);
