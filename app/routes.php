@@ -127,6 +127,13 @@ function dispatch(string $route,string $method): never {
         $content=MarkdownFormatter::result($raw,$response,false);$st->write('kunskapsbank/'.$rel,$content);
         json_response(MarkdownFormatter::report($raw,$content));
     }
+    if($route==='/api/markdown/clean'&&$post) {
+        $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??null;
+        if(!is_string($raw)||strlen($raw)>2000000||!is_string($rel)||!in_array($kind,['doc','skill'],true))throw new RuntimeException('Ogiltigt Markdown-dokument (max 2 MB).',400);
+        $st->document($rel,$kind==='skill'?'skills':'kunskapsbank');
+        $content=MarkdownFormatter::clean($raw);[$meta]=Store::parse($content);
+        json_response(['content'=>$content,'cleanup_changed'=>$raw!==$content,'ai_enabled'=>$s['ai']['enabled'],'tags'=>$meta['tags']??[]]);
+    }
     if(in_array($route,['/api/markdown/prepare','/api/markdown/format','/api/markdown/validate'],true)&&$post) {
         $d=input();$raw=$d['content']??null;$kind=$d['kind']??'';$rel=$d['relpath']??'';
         if(!is_string($raw)||strlen($raw)>100000||!trim($raw)||!in_array($kind,['doc','skill'],true)||!is_string($rel))throw new RuntimeException('Välj ett Markdown-dokument med högst 100 kB för AI-formatering.',400);

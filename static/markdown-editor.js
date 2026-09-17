@@ -20,10 +20,10 @@
     document.getElementById('deleteItemBtn').disabled=value;
     area.readOnly=value; editor?.updateOptions({readOnly:value});
   }
-  undo.onclick = () => {if(previous!==null){replace(previous);previous=null;undo.hidden=true;status.textContent='AI-formateringen ångrades. Filen på disk är oförändrad.';}};
+  undo.onclick = () => {if(previous!==null){replace(previous);previous=null;undo.hidden=true;status.textContent='Uppsnyggningen ångrades. Filen på disk är oförändrad.';}};
   format.onclick = async () => {
-    const original=read(),payload={content:original,relpath:data.relpath,kind:data.kind};
-    lock(true);status.textContent='AI snyggar till Markdown och frontmatter…';
+    const original=read();let cleaned=null;const payload={content:original,relpath:data.relpath,kind:data.kind};
+    lock(true);status.textContent='Städar Markdown med kod…';
     format.classList.add('is-formatting');
     format.setAttribute('aria-busy','true');
     const started=Date.now();
@@ -31,6 +31,12 @@
     progress();
     const timer=setInterval(progress,1000);
     try {
+      cleaned=await postJSON('/api/markdown/clean',payload);
+      if(read()!==original)throw new Error('Texten ändrades under städningen. Förslaget tillämpades inte.');
+      previous=original;replace(cleaned.content);undo.hidden=false;
+      payload.content=cleaned.content;
+      if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+' AI är avstängd; taggarna behölls. Granska och klicka Spara.';return;}
+      status.textContent='Kodstädning klar. AI snyggar till struktur och frontmatter…';
       const prepared=await postJSON('/api/markdown/prepare',payload);
       let result;
       if(prepared.ai.provider==='ollama') {
@@ -39,15 +45,15 @@
         status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
         result=await postJSON('/api/markdown/validate',{...payload,response});
       } else result=await postJSON('/api/markdown/format',payload);
-      if(read()!==original)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
+      if(read()!==cleaned.content)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(result.content);undo.hidden=false;
-      status.textContent=(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'. Granska och klicka Spara.';
-    } catch(error) {status.textContent=error.message;}
+      status.textContent='Kodstädning klar. '+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'. Granska och klicka Spara.';
+    } catch(error) {status.textContent=(cleaned&&read()===cleaned.content?'Kodstädningen behölls, men AI-steget blev inte klart: ':'')+error.message;}
     finally {
       clearInterval(timer);
       format.classList.remove('is-formatting');
       format.setAttribute('aria-busy','false');
-      format.textContent='Snygga till med AI';
+      format.textContent='Snygga till';
       lock(false);
     }
   };

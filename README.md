@@ -239,3 +239,17 @@ AI-fel eller förslag som ändrar ord behåller den konverterade texten och ger 
 varning. Dokument över 100 kB AI-formateras inte automatiskt. Avstängd AI eller
 avstängd AI-import ger vanlig PHP-konvertering. Redigerarknappen visar vilka
 taggar som föreslogs och om Markdown-strukturen ändrades eller behölls.
+
+## Kodbaserad Markdown-städning
+
+**Snygga till** kör först vanlig PHP-städning och därefter AI om AI är aktiverad.
+Kodstädningen fungerar även utan AI och används vid import. Den normaliserar
+radslut, tar bort BOM, osynliga skräptecken och kontrolltecken, ersätter hårda
+mellanslag och begränsar upprepade tomrader. Avsiktliga Markdown-radbrytningar
+(två mellanslag) behålls. Kodblock, indenterad kod, inline-kod och länkadresser
+skyddas; innehållsrader eller vanliga ord tas inte bort.
+
+Om AI-anropet misslyckas finns den kodstädade texten kvar i redigeraren.
+**Ångra uppsnyggning** återställer originalet före båda stegen. Granska och
+klicka **Spara** för att spara filen. Kodstädning ändrar inte taggarnas betydelse;
+AI uppdaterar frontmatter/taggar när det är aktiverat.

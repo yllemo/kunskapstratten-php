@@ -86,7 +86,7 @@ final class Importer {
             if(!$force && isset($registry[$hash]) && ($registry[$hash]['status']??'')==='done') {$result['skipped']++;continue;}
             $original=null; $output=null; $image=null;
             try {
-                $body=$this->convert($this->store->path($rel,true),basename($rel));
+                $body=MarkdownFormatter::clean($this->convert($this->store->path($rel,true),basename($rel)));
                 $name=pathinfo($rel,PATHINFO_FILENAME); $ext=strtolower(pathinfo($rel,PATHINFO_EXTENSION));
                 $meta=['title'=>$name,'tags'=>[],'summary'=>'','source_type'=>$ext,'source_hash'=>$hash,'converted_at'=>gmdate('c')];
                 if($ext==='md') { [$existing,$body]=Store::parse($body); $meta=array_replace($existing,$meta,['title'=>$existing['title']??$name,'tags'=>$existing['tags']??[],'summary'=>$existing['summary']??'']); }
