@@ -144,12 +144,14 @@ function dispatch(string $route,string $method): never {
         if(!$s['ai']['enabled'])throw new RuntimeException('Aktivera AI under Inställningar.',400);
         $selection=($d['selection']??false)===true;$source=$raw;
         if($selection)$raw=Store::compose(['title'=>'Markerad text'],$raw);
-        $messages=MarkdownFormatter::messages($raw,$kind==='skill');
+        $level=$d['level']??'intensive';$retry=($d['retry']??false)===true;
+        if(!is_string($level)||!in_array($level,['light','normal','intensive'],true))throw new RuntimeException('Ogiltig uppsnyggningsnivå.',400);
+        $messages=MarkdownFormatter::messages($raw,$kind==='skill',$level,$retry);
         if($route==='/api/markdown/prepare')json_response(['ai_revision'=>MarkdownFormatter::configurationId($s['ai']),'messages'=>$messages,'schema'=>MarkdownFormatter::schema($kind==='skill'),'ai'=>array_intersect_key($s['ai'],array_flip(['provider','base_url','model','temperature','timeout','enabled']))]);
         MarkdownFormatter::checkConfiguration($s['ai'],$d);
         if($route==='/api/markdown/format') {
             if($s['ai']['provider']==='ollama')throw new RuntimeException('Ollama ska anropas från webbläsaren.',409);
-            $response=MarkdownFormatter::generate($s['ai'],$raw,$kind==='skill');
+            $response=MarkdownFormatter::generate($s['ai'],$raw,$kind==='skill',$level,$retry);
         } else {$response=$d['response']??null;if(!is_string($response)||strlen($response)>500000)throw new RuntimeException('Ogiltigt AI-förslag.',400);}
         $content=MarkdownFormatter::result($raw,$response,$kind==='skill');
         $report=MarkdownFormatter::report($raw,$content);

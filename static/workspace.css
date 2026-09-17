@@ -182,3 +182,7 @@
 @media (prefers-reduced-motion: reduce) {
   #formatMarkdownBtn.is-formatting::before { animation: none; }
 }
+
+.format-level-label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; color: var(--text-muted, #64748b); }
+.format-level-label select { width: auto; padding: .5rem .65rem; border: 1px solid var(--border, #dce2e8); border-radius: 6px; background: var(--surface, #fff); color: inherit; font: inherit; }
+.format-level-label select:focus-visible { outline: 2px solid #7aa5c8; outline-offset: 2px; }

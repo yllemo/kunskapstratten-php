@@ -296,3 +296,20 @@ Vid gateway-timeout kan webbhotellets tidsgräns ha nåtts. Markera en mindre de
 eller välj en snabbare modell. Ollamas tidsgräns gäller hela det strömmade svaret.
 Om AI ändrar ord, kod eller länkar stoppas AI-förslaget; kodstädningen kan behållas
 eller ångras.
+
+### Nivåer för uppsnyggning i redigeraren
+
+Välj nivån bredvid **Snygga till**:
+
+- **Varsam:** reparerar Markdown och behåller dispositionen.
+- **Tydlig struktur:** bearbetar rubriker, stycken, listor och återkommande fält.
+- **Kraftig struktur** (standard): gör en fördjupad genomgång av dispositionen,
+  bryter ut befintliga rubrikfraser, skapar listor av aktiviteter i löptext och
+  tabeller av jämförbara poster. Kan betona befintliga etiketter med fetstil.
+
+Redigeraren använder andra instruktioner än första importen. Samma nivå gäller
+för markerad text och hela dokumentet, med alla AI-leverantörer. Originalets ord
+och ordning bevaras; nivåerna innebär ingen omskrivning av innehållet.
+Tydlig/Kraftig gör högst ett extra AI-försök om första förslaget saknar
+strukturändringar. Om AI fortfarande inte ändrar strukturen visas det tydligt.
+Oförändrad text och metadata får ingen ny `updated_at` enbart för att AI körts.

@@ -2,6 +2,7 @@
   const data = JSON.parse(document.getElementById('editor-data').textContent);
   const area = document.getElementById('editArea'), status = document.getElementById('saveStatus');
   const save = document.getElementById(data.saveId), format = document.getElementById('formatMarkdownBtn'), undo = document.getElementById('undoFormatBtn');
+  const level = document.getElementById('formatLevel');
   let editor = null, previous = null, busy = false;
   const read = () => editor ? editor.getValue() : area.value;
   function replace(text) {
@@ -20,7 +21,7 @@
     });
   }
   function lock(value) {
-    busy=value; save.disabled=format.disabled=value; undo.disabled=value;
+    busy=value;level.disabled=value; save.disabled=format.disabled=value; undo.disabled=value;
     document.getElementById('deleteItemBtn').disabled=value;
     area.readOnly=value; editor?.updateOptions({readOnly:value});
   }
@@ -36,7 +37,7 @@
     if(selected&&frontmatter&&start<frontmatter[0].length){status.textContent='Markera text efter YAML-frontmatter, eller avmarkera för att snygga till hela dokumentet.';return;}
     const merge=text=>selected?original.slice(0,start)+text+original.slice(end):text;
     let cleaned=null, cleanedDocument=null;
-    const payload={content:source,selection:selected,relpath:data.relpath,kind:data.kind};
+    const payload={content:source,selection:selected,relpath:data.relpath,kind:data.kind,level:level.value};
     lock(true);status.textContent=selected?'Städar markerad text med kod…':'Städar hela dokumentet med kod…';
     format.classList.add('is-formatting');
     format.setAttribute('aria-busy','true');
@@ -50,19 +51,24 @@
       previous=original;cleanedDocument=merge(cleaned.content);replace(cleanedDocument);undo.hidden=false;
       payload.content=cleaned.content;
       if(!cleaned.ai_enabled){status.textContent=(cleaned.cleanup_changed?'Kodstädning klar.':'Texten är redan städad.')+(selected?' Markerad text behandlad; övrig text och frontmatter behölls.':' Rubriker/tabeller och frontmatter behandlade. Taggar: '+cleaned.tags.join(', ')+'.')+' AI är avstängd. Granska och klicka Spara.';return;}
-      status.textContent='Kodstädning klar. AI snyggar till struktur och frontmatter…';
-      const prepared=await postJSON('/api/markdown/prepare',payload);
-      payload.ai_revision=prepared.ai_revision;
+      status.textContent='Kodstädning klar. AI arbetar med '+level.options[level.selectedIndex].text.toLowerCase()+(selected?' på markerad text…':' och frontmatter…');
       let result;
-      if(prepared.ai.provider==='ollama') {
-        let response='';
-        await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
-        status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
-        result=await postJSON('/api/markdown/validate',{...payload,response});
-      } else result=await postJSON('/api/markdown/format',payload);
+      for(let attempt=0;attempt<2;attempt++){
+        const request={...payload,retry:attempt>0};
+        const prepared=await postJSON('/api/markdown/prepare',request);
+        request.ai_revision=prepared.ai_revision;
+        if(prepared.ai.provider==='ollama') {
+          let response='';
+          await window.localOllama.stream({...prepared.ai,temperature:0,format:prepared.schema},prepared.messages,token=>{response+=token;});
+          status.textContent='Kontrollerar ord, kod, länkar och frontmatter…';
+          result=await postJSON('/api/markdown/validate',{...request,response});
+        } else result=await postJSON('/api/markdown/format',request);
+        if(result.structure_changed||level.value==='light')break;
+        if(attempt===0)status.textContent='AI gav ingen strukturändring. Gör en fördjupad genomgång…';
+      }
       if(read()!==cleanedDocument)throw new Error('Texten ändrades under bearbetningen. Förslaget tillämpades inte.');
       previous=original;replace(merge(result.content));undo.hidden=false;
-      status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'Markdown-strukturen behölls.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';
+      status.textContent=(selected?'Markerad text behandlad. ':'Kodstädning klar. ')+(result.structure_changed ? 'Markdown-strukturen förbättrad.' : 'AI gav ingen ändring av textens struktur efter genomgången.')+(selected?' Texten utanför markeringen behölls.':' Frontmatter uppdaterad. Taggar: '+result.tags.join(', ')+'.')+' Granska och klicka Spara.';
     } catch(error) {status.textContent=(cleaned&&read()===cleanedDocument?'Kodstädningen behölls, men AI-steget blev inte klart: ':'')+error.message;}
     finally {
       clearInterval(timer);
