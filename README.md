@@ -343,3 +343,12 @@ Justera även eventuell Route framför själva AI-servern och PHP-/webbserverns
 tidsgränser vid behov. Använd den faktiska routen och namespace för installationen.
 Kodändringen ändrar inga klusterinställningar. Se [Red Hats dokumentation om
 Route-timeout](https://developers.redhat.com/articles/2025/07/02/how-haproxy-router-settings-affect-middleware-applications).
+
+### Mermaid-diagram
+
+Kodblock med språket `mermaid` visas som diagram i dokumentets Markdown-vy
+och i chattens färdiga Markdown-svar. Båda använder samma renderare och
+`https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.esm.min.mjs`.
+Mermaid hämtas först när ett diagram behöver visas. Visa Mermaid-kod öppnar
+originalkoden; vid renderingsfel visas koden automatiskt. Webbläsaren behöver
+kunna nå jsDelivr.

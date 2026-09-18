@@ -1,9 +1,5 @@
 /* AI-output är opålitlig Markdown: sanera alltid före HTML-infogning. */
 (() => {
-  let mermaidPromise;
-  let renderQueue = Promise.resolve();
-  let diagramId = 0;
-
   function copyButton(source) {
     const button = document.createElement('button');
     button.type = 'button';
@@ -30,22 +26,6 @@
       setTimeout(() => { button.textContent = 'Kopiera kod'; }, 2500);
     });
     return button;
-  }
-
-  async function renderDiagram(target, source) {
-    try {
-      mermaidPromise ||= import('https://cdn.jsdelivr.net/npm/mermaid@latest/dist/mermaid.esm.min.mjs');
-      const { default: mermaid } = await mermaidPromise;
-      mermaid.initialize({startOnLoad:false, securityLevel:'strict', theme:'default', htmlLabels:false,
-        flowchart:{htmlLabels:false}, suppressErrorRendering:true});
-      const { svg } = await mermaid.render('chat-diagram-' + (++diagramId), source);
-      // SVG utan externa resurser, HTML eller interaktiva länkar.
-      target.innerHTML = DOMPurify.sanitize(svg, {USE_PROFILES:{svg:true, svgFilters:true}, FORBID_TAGS:['foreignObject','a','image','use']});
-    } catch (_) {
-      target.textContent = 'Diagrammet kunde inte renderas. Kontrollera Mermaid-koden eller anslutningen till CDN.';
-      target.classList.add('diagram-error');
-      if (target.nextElementSibling?.tagName === 'DETAILS') target.nextElementSibling.open = true;
-    }
   }
 
   window.renderChatMarkdown = async (bubble, source) => {
@@ -94,8 +74,7 @@
         summary.textContent = 'Visa Mermaid-kod';
         details.append(summary, pre);
         frame.append(diagram, details);
-        renderQueue = renderQueue.then(() => renderDiagram(diagram, source));
-        pending.push(renderQueue);
+        pending.push(window.renderMermaidDiagram(diagram, source));
       }
     });
     await Promise.all(pending);
