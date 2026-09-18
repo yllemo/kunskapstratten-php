@@ -13,6 +13,7 @@
         const mermaid=await load();
         const {svg}=await mermaid.render('kb-mermaid-'+(++diagramId),source);
         target.innerHTML=DOMPurify.sanitize(svg,{USE_PROFILES:{svg:true,svgFilters:true},FORBID_TAGS:['foreignObject','a','image']});
+        window.makeMediaZoomable?.(target);
       } catch(error) {
         target.textContent='Diagrammet kunde inte renderas. Kontrollera Mermaid-koden eller anslutningen till CDN.';
         target.classList.add('diagram-error');

@@ -371,3 +371,18 @@ för att inloggningen ska finnas kvar efter poddomstart. Vid flera repliker
 behöver de dela samma content-lagring. En raderad cookie eller sessionsfil
 kräver ny inloggning. Befintliga inloggningar kan behöva förnyas en gång efter
 uppdateringen eftersom sessionslagringen ändras.
+
+### Markdown-vy och zoom
+
+Markdown-vyn använder Marked med CommonMark/GFM-stöd, och DOMPurify för
+sanering. Rubriker och ankarlänkar, fet/kursiv/genomstruken text, nästlade
+numrerade och vanliga listor, checklistor, citat, referenslänkar, bilder,
+kodblock och tabeller renderas i webbläsaren. Tabellernas kolumnjustering
+bevaras; breda tabeller rullas horisontellt. PHP-visningen finns kvar som
+enklare reserv om JavaScript eller CDN-laddningen saknas.
+
+Klicka på en bild eller ett Mermaid-diagram för att öppna lightboxen. Dra för
+att panorera och scrolla/nyp för att zooma. Knapparna +/−, Anpassa och 100 %
+styr zoom; Esc stänger. Tangentbord: Enter öppnar ett fokuserat objekt,
++/− zoomar, 0 anpassar och piltangenterna panorerar. Mermaid-diagram i chatten
+använder samma lightbox. Funktionen kräver inga nya serverpaket.
