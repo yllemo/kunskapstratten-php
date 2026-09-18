@@ -75,7 +75,12 @@ function input(): array {
     return $data;
 }
 function base_path(): string {
-    return rtrim(str_replace('\\','/',dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php')), '/.');
+    $script=rtrim(str_replace('\\','/',dirname($_SERVER['SCRIPT_NAME'] ?? '/index.php')), '/.');
+    // An alias/subdomain can expose / while PHP still reports /folder/index.php.
+    // REQUEST_URI reflects the public path, unlike the server's internal script location.
+    if($script===''||!isset($_SERVER['REQUEST_URI']))return $script;
+    $public=rawurldecode((string)(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH)??'/'));
+    return $public===$script||str_starts_with($public,$script.'/')?$script:'';
 }
 function app_url(string $path): string { return base_path().'/index.php?r='.rawurlencode($path); }
 function url_for(string $name, ...$args): string {

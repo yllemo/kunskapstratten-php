@@ -386,3 +386,12 @@ att panorera och scrolla/nyp för att zooma. Knapparna +/−, Anpassa och 100 %
 styr zoom; Esc stänger. Tangentbord: Enter öppnar ett fokuserat objekt,
 +/− zoomar, 0 anpassar och piltangenterna panorerar. Mermaid-diagram i chatten
 använder samma lightbox. Funktionen kräver inga nya serverpaket.
+
+### Subdomän och undermapp
+
+Samma installation kan nås både från en subdomäns rot och en undermapp.
+Publika adresser till CSS, JavaScript, formulär och API följer sökvägen i
+förfrågan, även när PHP:s interna `SCRIPT_NAME` fortfarande innehåller
+undermappen. Exempel: subdomänen använder `/static/style.css`, medan
+`https://aiwiki.se/kunskapstratten/` använder `/kunskapstratten/static/style.css`.
+Ladda upp den uppdaterade `app/bootstrap.php` och ladda om sidan efter uppdatering.
