@@ -15,8 +15,7 @@ header('Cache-Control: no-store');
 require __DIR__.'/app/bootstrap.php';
 
 try {
-    session_name('kunskapstratten');
-    session_start(['cookie_httponly'=>true,'cookie_samesite'=>'Strict','cookie_secure'=>!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS']!=='off','use_strict_mode'=>true]);
+    start_login_session();
     $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
     $method=$_SERVER['REQUEST_METHOD'];
     $route=$_GET['r'] ?? rawurldecode(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH));
@@ -43,13 +42,13 @@ try {
                 $count=($attempt['count']??0)+1;
                 store()->saveJson('logs/'.$key,['count'=>$count>=5?0:$count,'until'=>$count>=5?time()+60:0]); return false;
             });
-            if($ok) { session_regenerate_id(true); $_SESSION['authenticated']=true; $_SESSION['csrf']=bin2hex(random_bytes(32)); redirect_to(app_url('/browse')); }
+            if($ok) { session_regenerate_id(true); $_SESSION['authenticated']=true; renew_login_session(); $_SESSION['csrf']=bin2hex(random_bytes(32)); redirect_to(app_url('/browse')); }
             $error='Fel lösenord.';
         }
         if(str_starts_with($route,'/api/')) json_response(['error'=>'Logga in igen.'],401);
         render('login.html',['error'=>$error]);
     }
-    if ($route==='/logout' && $method==='POST') { $_SESSION=[]; session_destroy(); redirect_to(app_url('/browse')); }
+    if ($route==='/logout' && $method==='POST') { end_login_session(); redirect_to(app_url('/browse')); }
     require __DIR__.'/app/routes.php';
     // All writes and streams coordinate with reset and each other across PHP workers.
     if (!in_array($method,['GET','HEAD'],true)) store()->locked(fn()=>dispatch($route,$method));

@@ -352,3 +352,22 @@ och i chattens färdiga Markdown-svar. Båda använder samma renderare och
 Mermaid hämtas först när ett diagram behöver visas. Visa Mermaid-kod öppnar
 originalkoden; vid renderingsfel visas koden automatiskt. Webbläsaren behöver
 kunna nå jsDelivr.
+
+### Originalfil och inloggning
+
+I Markdown-vyn visas **Visa originalfil** när dokumentets `source_file` pekar
+på en befintlig fil i bankens `processed`-mapp. Filen öppnas i en ny flik;
+format som webbläsaren inte kan visa laddas ned.
+
+Inloggningen sparas i en HttpOnly-cookie med SameSite=Strict i 32 dagar.
+Tiden förnyas vid användning. Logga ut avslutar sessionen och raderar cookien.
+Serverns sessionsfiler ligger separat i `content/.sessions`, med samma livslängd,
+så att webbhotellets vanliga korta sessionrensning inte tar bort dem. Mappen
+är privat och ska skyddas tillsammans med övrigt content. HTTPS via
+`X-Forwarded-Proto` stöds för OpenShift och andra reverse proxies.
+
+På OpenShift måste content inklusive `.sessions` ligga på beständig lagring
+för att inloggningen ska finnas kvar efter poddomstart. Vid flera repliker
+behöver de dela samma content-lagring. En raderad cookie eller sessionsfil
+kräver ny inloggning. Befintliga inloggningar kan behöva förnyas en gång efter
+uppdateringen eftersom sessionslagringen ändras.

@@ -18,6 +18,31 @@ function config(): array {
     }
     return $config;
 }
+// Persistent sessions have isolated storage so the host's short default GC cannot remove them.
+function start_login_session(): void {
+    $lifetime=32*24*60*60;
+    $directory=content_root().'/.sessions';
+    if(!is_dir($directory)&&!mkdir($directory,0700,true)&&!is_dir($directory))throw new RuntimeException('Sessionsmappen kunde inte skapas. Kontrollera skrivbehörigheten.',500);
+    session_name('kunskapstratten');
+    session_save_path($directory);
+    $secure=(!empty($_SERVER['HTTPS'])&&$_SERVER['HTTPS']!=='off')||strtolower(trim(explode(',',$_SERVER['HTTP_X_FORWARDED_PROTO']??'')[0]))==='https';
+    if(!session_start(['save_handler'=>'files','gc_maxlifetime'=>$lifetime,'cookie_lifetime'=>$lifetime,'cookie_path'=>base_path().'/',
+        'cookie_httponly'=>true,'cookie_samesite'=>'Strict','cookie_secure'=>$secure,'use_strict_mode'=>true,'use_only_cookies'=>true]))throw new RuntimeException('Sessionen kunde inte startas.',500);
+    if(!empty($_SESSION['authenticated'])){
+        if(isset($_SESSION['authenticated_until'])&&$_SESSION['authenticated_until']<time())unset($_SESSION['authenticated'],$_SESSION['authenticated_until']);
+        else renew_login_session();
+    }
+}
+function renew_login_session(): void {
+    $expires=time()+32*24*60*60;
+    $_SESSION['authenticated_until']=$expires;
+    setcookie(session_name(),session_id(),['expires'=>$expires]+array_diff_key(session_get_cookie_params(),['lifetime'=>true]));
+}
+function end_login_session(): void {
+    $_SESSION=[];
+    setcookie(session_name(),'',['expires'=>time()-3600]+array_diff_key(session_get_cookie_params(),['lifetime'=>true]));
+    session_destroy();
+}
 function bank_id(?string $candidate=null): string {
     $env=getenv('KB_BANK');$id=$candidate ?? ($env!==false&&$env!==''?$env:($_SESSION['bank']??config()['default_bank']));
     if(!is_string($id)||!preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/',$id))throw new RuntimeException('Ogiltig kunskapsbank.',400);
