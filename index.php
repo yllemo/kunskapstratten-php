@@ -4,7 +4,7 @@ declare(strict_types=1);
 // PHP development server: serve only explicitly public assets as static files.
 if (PHP_SAPI==='cli-server') {
     $asset=rawurldecode(parse_url($_SERVER['REQUEST_URI'],PHP_URL_PATH));
-    if (preg_match('~^/static/[a-zA-Z0-9._-]+\.(css|js|svg)$~',$asset) && is_file(__DIR__.$asset)) return false;
+    if (preg_match('~^/static/[a-zA-Z0-9._-]+\.(css|js|svg|png)$~',$asset) && is_file(__DIR__.$asset)) return false;
     $_SERVER['SCRIPT_NAME']='/index.php';
 }
 ini_set('display_errors','0');

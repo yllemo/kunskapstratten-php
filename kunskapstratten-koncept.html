@@ -74,6 +74,10 @@ h2.section-title{font-size:1.3rem; font-weight:700; margin:2.2rem 0 .8rem}
 h2.section-title:first-child{margin-top:0}
 .lead{font-size:1.05rem; color:var(--text-secondary); max-width:42rem; margin:0 0 1.6rem}
 
+.concept-image{margin:1.2rem 0 1.8rem; text-align:center}
+.concept-image img{display:block; width:100%; max-width:960px; height:auto; margin:0 auto; border:1px solid var(--border-color); border-radius:10px; background:#fff; box-shadow:var(--shadow)}
+.concept-image figcaption{max-width:60rem; margin:.65rem auto 0; color:var(--text-secondary); font-size:.88rem}
+
 /* Diagramkort - alltid ljust, oberoende av tema (mermaid-färgerna är fasta) */
 .diagram-card{
   background:#ffffff; border:1px solid var(--border-color); border-radius:var(--radius);
@@ -186,6 +190,10 @@ footer{
     <p class="lead">Kunskapstratten omvandlar dokument till en sökbar kunskapsbank i Markdown.
       Du väljer sedan vilka filer en chatt eller återanvändbar skill ska bearbeta.
       Den här sidan beskriver programmet; den är inte själva arbetsgränssnittet.</p>
+    <figure class="concept-image">
+      <img src="static/kunskapstratten-koncept.png" alt="Illustration av Kunskapstrattens flöde: dokument samlas in, bearbetas och blir kunskap som kan användas av chatt och skills." width="1536" height="1024" loading="eager" decoding="async">
+      <figcaption>Från källdokument till en kunskapsbank som du kan söka i och använda tillsammans med AI och skills.</figcaption>
+    </figure>
     <div class="diagram-card"><div class="mermaid">
 flowchart LR
   inbox["Inbox: dokument"] --> import["Import: PHP-konvertering + valfri AI"]
