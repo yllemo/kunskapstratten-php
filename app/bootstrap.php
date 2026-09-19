@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__.'/Store.php';
+require __DIR__.'/FileBrowser.php';
 require __DIR__.'/AI.php';
 require __DIR__.'/DocumentConverter.php';
 require __DIR__.'/Importer.php';
@@ -96,7 +97,7 @@ function base_path(): string {
 }
 function app_url(string $path): string { return base_path().'/index.php?r='.rawurlencode($path); }
 function url_for(string $name, ...$args): string {
-    $routes = ['browse'=>'/browse','skills_page'=>'/skills','chat_page'=>'/chat','new_doc'=>'/new','upload_documents'=>'/upload','new_skill'=>'/skills/new','help_guide'=>'/help/guide', 'view_doc'=>'/doc/{relpath}', 'edit_doc'=>'/doc/{relpath}/edit','download_doc'=>'/doc/{relpath}/download','open_original'=>'/doc/{relpath}/original','doc_preview'=>'/api/doc-preview/{relpath}','save_doc'=>'/api/doc/{relpath}','save_skill'=>'/api/skill/{relpath}','edit_skill'=>'/skills/edit/{relpath}','run_skill_page'=>'/skills/run/{slug}','skill_documents'=>'/skills/documents/{slug}','delete_item'=>'/api/delete/{kind}/{relpath}'];
+    $routes = ['browse'=>'/browse','files_page'=>'/files','files_download'=>'/files/download','skills_page'=>'/skills','chat_page'=>'/chat','new_doc'=>'/new','upload_documents'=>'/upload','new_skill'=>'/skills/new','help_guide'=>'/help/guide', 'view_doc'=>'/doc/{relpath}', 'edit_doc'=>'/doc/{relpath}/edit','download_doc'=>'/doc/{relpath}/download','open_original'=>'/doc/{relpath}/original','doc_preview'=>'/api/doc-preview/{relpath}','save_doc'=>'/api/doc/{relpath}','save_skill'=>'/api/skill/{relpath}','edit_skill'=>'/skills/edit/{relpath}','run_skill_page'=>'/skills/run/{slug}','skill_documents'=>'/skills/documents/{slug}','delete_item'=>'/api/delete/{kind}/{relpath}'];
     if ($name === 'static') { $file=dirname(__DIR__).'/static/'.$args['filename'];return base_path().'/static/'.rawurlencode($args['filename']).(is_file($file)?'?v='.filemtime($file):''); }
     $path = $routes[$name] ?? throw new RuntimeException('Okänd route: '.$name);
     foreach ($args as $key=>$value) if (str_contains($path,'{'.$key.'}')) { $path = str_replace('{'.$key.'}',(string)$value,$path); unset($args[$key]); }

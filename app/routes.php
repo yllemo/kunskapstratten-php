@@ -6,6 +6,12 @@ function dispatch(string $route,string $method): never {
     if($route==='/banks/select'&&$post){$id=bank_id((string)($_POST['bank']??''));if(!is_dir(bank_path($id).'/storage'))throw new RuntimeException('Kunskapsbanken finns inte.',404);$_SESSION['bank']=$id;redirect_to(url_for('browse'));}
     if($route==='/banks/create'&&$post){$name=trim((string)($_POST['name']??''));if($name===''||mb_strlen($name)>80)throw new RuntimeException('Ange ett namn med högst 80 tecken.',400);$id=bank_slug($name);if(is_dir(bank_path($id)))throw new RuntimeException('En kunskapsbank med det namnet finns redan.',409);ensure_bank($id,$name);$_SESSION['bank']=$id;$new=new Store(bank_path($id).'/storage');$base=config();unset($base['ai']['api_key']);$new->saveJson('data/settings.json',['version'=>1,'title'=>$name,'ai'=>$base['ai'],'gui'=>['preview_enabled'=>false]]);redirect_to(url_for('browse'));}
     if ($route==='/help/guide' && $method==='GET') { header('Content-Type: text/html; charset=utf-8'); readfile(dirname(__DIR__).'/kunskapstratten-koncept.html'); exit; }
+    if ($route==='/files' && $method==='GET'){
+        $folder=$_GET['path']??'';
+        if(!is_string($folder))throw new RuntimeException('Ogiltig mapp.',400);
+        render('files.html',['folder'=>$folder,'listing'=>FileBrowser::listing($folder),'bank'=>bank_id()],'files_page');
+    }
+    if ($route==='/files/download' && $method==='GET')send_file(FileBrowser::path($_GET['path']??null,true),false);
     if ($route==='/browse' && $method==='GET') browse_page();
     if ($route==='/api/stats' && $method==='GET') { $docs=$st->documents(); json_response(['documents'=>count($docs),'tags'=>count(array_unique(array_merge(...array_column($docs,'tags'))))]); }
     if ($route==='/new' && in_array($method,['GET','POST'])) {

@@ -441,3 +441,17 @@ eller välja dem via filväljaren. Valda filer visas med namn, storlek och
 sammanlagd storlek innan uppladdning. Du kan ta bort en fil eller rensa alla.
 Fler filer som släpps eller väljs läggs till i listan; samma fil läggs inte
 till två gånger. Uppladdningen sker först när du klickar **Ladda upp filer**.
+
+### Från toppen av tratten till filer i banken
+
+På **Ladda upp** ligger källdokumenten först i `inbox`. Efter **Bearbeta nu**
+omvandlas de till sökbara och redigerbara Markdown-filer i `kunskapsbank`,
+medan originalen sparas i `processed`. Du kan öppna **Filer** i huvudmenyn
+eller via uppladdningssidan för att bläddra i den valda bankens mappar.
+
+Filvyn är skrivskyddad och använder appens vanliga lösenordsinloggning.
+Den visar bara `kunskapsbank`, `inbox`, `processed` och `skills` under
+`content/<vald bank>/storage`. `data`, `logs`, config, dolda filer och
+filtyper utanför dokumentimportens lista visas inte och går inte att
+ladda ned via filvyn. Du kan öppna Markdown i dokumentvyn och ladda ned
+tillåtna filer. Den separata `filemanager.php` behövs inte.

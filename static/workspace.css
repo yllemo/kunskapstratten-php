@@ -242,3 +242,28 @@
 .skill-form #skillDocumentFilter:focus-visible { outline:2px solid var(--gs-blue); outline-offset:2px; }
 .skill-form-actions { display:flex; justify-content:flex-end; align-items:center; gap:.7rem; flex-wrap:wrap; }
 @media(max-width:600px){ .skill-form-fields { padding:1rem; } .skill-form-actions>* { flex:1; text-align:center; } }
+
+/* Read-only files in the selected bank */
+.file-browser { max-width:75rem; margin:0 auto; }
+.file-browser-head { display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin-bottom:1.3rem; }
+.file-browser-head h1 { margin:.7rem 0 .2rem; font-size:clamp(1.5rem,2.5vw,2rem); }
+.file-browser-head p { margin:0; color:var(--text-secondary); }
+.file-breadcrumbs { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; margin-bottom:1.25rem; font-size:.9rem; }
+.file-breadcrumbs span { color:var(--text-secondary); }
+.file-browser-note,.file-browser-empty { padding:1rem 1.2rem; border:1px solid var(--border-color); border-radius:8px; background:var(--bg-nav); color:var(--text-secondary); }
+.file-folder-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr)); gap:.8rem; margin-bottom:1.4rem; }
+.file-folder { display:grid; grid-template-columns:auto minmax(0,1fr); column-gap:.7rem; row-gap:.15rem; align-items:center; padding:1rem; border:1px solid var(--border-color); border-radius:10px; background:var(--bg-nav); color:var(--text-color); text-decoration:none; }
+.file-folder:hover,.file-folder:focus-visible { border-color:var(--gs-blue); background:var(--bg-info); }
+.file-folder span { grid-row:1 / span 2; color:var(--gs-blue); font-size:1.4rem; }
+.file-folder strong { overflow-wrap:anywhere; }
+.file-folder small { color:var(--text-secondary); }
+.file-table-wrap { max-width:100%; overflow:auto; border:1px solid var(--border-color); border-radius:10px; }
+.file-table { width:100%; border-collapse:collapse; text-align:left; }
+.file-table th { background:var(--bg-nav); font-size:.8rem; }
+.file-table th,.file-table td { padding:.8rem 1rem; border-bottom:1px solid var(--border-color); vertical-align:middle; }
+.file-table tr:last-child td { border-bottom:0; }
+.file-table td:nth-child(2),.file-table td:nth-child(3) { white-space:nowrap; color:var(--text-secondary); font-size:.85rem; }
+.file-name { overflow-wrap:anywhere; font-weight:600; }
+.file-actions { white-space:nowrap; }
+.file-actions a { margin-right:.8rem; }
+@media(max-width:650px){ .file-browser-head { align-items:flex-start; flex-direction:column; } .file-table th:nth-child(2),.file-table td:nth-child(2),.file-table th:nth-child(3),.file-table td:nth-child(3) { display:none; } .file-table th,.file-table td { padding:.7rem; } .file-actions { white-space:normal; } .file-actions a { display:block; padding:.25rem 0; margin:0; } }
