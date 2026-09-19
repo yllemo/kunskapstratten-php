@@ -429,3 +429,7 @@ egen mapp. Rotens `config.php` behövs inte när den beständiga filen räcker.
 Webbserverns `.htaccess` och `web.config` blockerar direkt åtkomst till
 `content`, men montera helst mappen utanför publik webbrot. `config.php` i
 content ignoreras av Git.
+
+Chattens skill-väljare använder samma diskreta fältstil på desktop och mobil.
+Den visar den aktiva skillens beskrivning när valet ändras och går att använda
+med tangentbord och touch.
