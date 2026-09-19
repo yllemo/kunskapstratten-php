@@ -45,7 +45,12 @@ function dispatch(string $route,string $method): never {
             foreach(($files['name']??[]) as $i=>$name) {
                 try {
                     validate_upload(['error'=>$files['error'][$i],'size'=>$files['size'][$i],'name'=>$name]);
-                    $safe=Store::slug(pathinfo($name,PATHINFO_FILENAME)).'.'.strtolower(pathinfo($name,PATHINFO_EXTENSION));
+                    $rename=$_POST['upload_names'][$i]??'';
+                    if(!is_string($rename))throw new RuntimeException('Ogiltigt filnamn.',400);
+                    $rename=trim($rename);
+                    if($rename!==''&&(mb_strlen($rename)>120||preg_match('~[/\\\x00-\x1f]~',$rename)))throw new RuntimeException('Filnamnet får inte innehålla sökväg eller kontrolltecken (max 120 tecken).',400);
+                    $stem=$rename!==''?$rename:pathinfo($name,PATHINFO_FILENAME);
+                    $safe=Store::slug($stem).'.'.strtolower(pathinfo($name,PATHINFO_EXTENSION));
                     $rel=$st->unique('inbox/'.($folder?$folder.'/':'').$safe); $target=$st->path($rel);
                     if(!is_dir(dirname($target))) mkdir(dirname($target),0700,true);
                     if(!move_uploaded_file($files['tmp_name'][$i],$target)) throw new RuntimeException('Filen kunde inte sparas.');

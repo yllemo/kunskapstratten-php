@@ -8,25 +8,36 @@
   const identity=file=>[file.name,file.size,file.lastModified].join('\u0000');
   const formatSize=size=>size<1024?size+' B':size<1048576?(size/1024).toFixed(1)+' KB':(size/1048576).toFixed(1)+' MB';
   function sync(){
-    const transfer=new DataTransfer();files.forEach(file=>transfer.items.add(file));input.files=transfer.files;
+    const transfer=new DataTransfer();files.forEach(entry=>transfer.items.add(entry.file));input.files=transfer.files;
     zone.classList.toggle('has-files',files.length>0);
     section.hidden=files.length===0;
-    const total=files.reduce((sum,file)=>sum+file.size,0);
+    const total=files.reduce((sum,entry)=>sum+entry.file.size,0);
     summary.textContent=files.length?files.length+' '+(files.length===1?'fil vald':'filer valda')+' · '+formatSize(total):'Inga filer valda ännu · flera filer kan väljas';
     list.replaceChildren();
-    files.forEach((file,index)=>{
+    files.forEach((entry,index)=>{
+      const file=entry.file;
       const item=document.createElement('li');item.className='selected-file-item';
       const name=document.createElement('span');name.className='selected-file-name';name.textContent=file.name;name.title=file.name;
+      const ext=file.name.slice(file.name.lastIndexOf('.'));
+      const rename=document.createElement('label');rename.className='selected-file-rename';
+      const caption=document.createElement('span');caption.textContent='Nytt namn (valfritt)';
+      const field=document.createElement('span');field.className='selected-file-rename-field';
+      const edit=document.createElement('input');edit.name='upload_names[]';edit.type='text';edit.maxLength=120;
+      edit.placeholder=file.name.slice(0,-ext.length);edit.value=entry.rename;
+      edit.setAttribute('aria-label','Nytt namn för '+file.name);
+      edit.addEventListener('input',()=>{entry.rename=edit.value;});
+      const suffix=document.createElement('span');suffix.textContent=ext;
+      field.append(edit,suffix);rename.append(caption,field);
       const size=document.createElement('span');size.className='selected-file-size';size.textContent=formatSize(file.size);
       const remove=document.createElement('button');remove.type='button';remove.className='selected-file-remove';
       remove.textContent='Ta bort';remove.setAttribute('aria-label','Ta bort '+file.name);
       remove.addEventListener('click',()=>{files.splice(index,1);sync();});
-      item.append(name,size,remove);list.append(item);
+      item.append(name,rename,size,remove);list.append(item);
     });
   }
   function add(incoming){
-    const known=new Set(files.map(identity));
-    for(const file of incoming){if(!(file instanceof File)||!file.name)continue;const key=identity(file);if(!known.has(key)){files.push(file);known.add(key);}}
+    const known=new Set(files.map(entry=>identity(entry.file)));
+    for(const file of incoming){if(!(file instanceof File)||!file.name)continue;const key=identity(file);if(!known.has(key)){files.push({file,rename:''});known.add(key);}}
     sync();
   }
   input.addEventListener('change',()=>add(Array.from(input.files)));
