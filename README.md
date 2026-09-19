@@ -395,3 +395,11 @@ förfrågan, även när PHP:s interna `SCRIPT_NAME` fortfarande innehåller
 undermappen. Exempel: subdomänen använder `/static/style.css`, medan
 `https://aiwiki.se/kunskapstratten/` använder `/kunskapstratten/static/style.css`.
 Ladda upp den uppdaterade `app/bootstrap.php` och ladda om sidan efter uppdatering.
+
+### Skapa skills
+
+Formuläret för egna skills förklarar skillnaden mellan **Namn**, **Beskrivning**
+och **Instruktioner**. Ett tydligt namn gör skillen lätt att känna igen.
+Beskrivningen ska ange när skillen är relevant, vilket underlag den behöver
+och vilket resultat den ger; en AI-agent kan läsa den för att välja rätt skill.
+Instruktionerna beskriver själva utförandet efter att skillen valts.
