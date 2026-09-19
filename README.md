@@ -455,3 +455,13 @@ Den visar bara `kunskapsbank`, `inbox`, `processed` och `skills` under
 filtyper utanför dokumentimportens lista visas inte och går inte att
 ladda ned via filvyn. Du kan öppna Markdown i dokumentvyn och ladda ned
 tillåtna filer. Den separata `filemanager.php` behövs inte.
+
+### Ladda ned hela banken
+
+I **Filer** kan en inloggad användare ladda ned den valda kunskapsbanken
+som `<bank-id>-YYYY-MM-DD.zip`. Datumet följer svensk tid. Arkivet
+innehåller mapparna `kunskapsbank`, `inbox`, `processed` och `skills`, inklusive
+tillåtna filer i undermappar. Samma filter som i filvyn döljer systemfiler,
+konfiguration, dolda filer och otillåtna filtyper. `data` och `logs` följer
+inte med. ZIP-filen skapas tillfälligt och tas bort från servern efter
+nedladdning. PHP-tillägget `zip` måste vara aktiverat.

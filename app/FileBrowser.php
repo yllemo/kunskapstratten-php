@@ -24,6 +24,37 @@ final class FileBrowser {
         // Only user documents and generated images; never PHP, environment, keys or bank data.
         return in_array('.'.strtolower(pathinfo($name,PATHINFO_EXTENSION)),Importer::EXTENSIONS,true);
     }
+    public static function archive(): string {
+        if(!class_exists(ZipArchive::class))throw new RuntimeException('PHP-tillägget zip behövs för att ladda ned hela kunskapsbanken.',503);
+        $temporary=tempnam(sys_get_temp_dir(),'kb-export-');
+        if($temporary===false)throw new RuntimeException('ZIP-filen kunde inte skapas.',500);
+        $zip=new ZipArchive();$opened=false;
+        try {
+            if($zip->open($temporary,ZipArchive::CREATE|ZipArchive::OVERWRITE)!==true)throw new RuntimeException('ZIP-filen kunde inte öppnas.',500);
+            $opened=true;
+            foreach(array_keys(self::FOLDERS) as $folder){
+                if(!$zip->addEmptyDir($folder))throw new RuntimeException('Mappen kunde inte läggas i ZIP-filen.',500);
+                $add=function(string $relative) use (&$add,$zip): void {
+                    $items=self::listing($relative);
+                    foreach($items['folders'] as $item){
+                        if(!$zip->addEmptyDir($item['path']))throw new RuntimeException('Mappen kunde inte läggas i ZIP-filen.',500);
+                        $add($item['path']);
+                    }
+                    foreach($items['files'] as $item){
+                        if(!$zip->addFile(self::path($item['path'],true),$item['path']))throw new RuntimeException('Filen kunde inte läggas i ZIP-filen.',500);
+                    }
+                };
+                $add($folder);
+            }
+            $closed=$zip->close();$opened=false;
+            if(!$closed)throw new RuntimeException('ZIP-filen kunde inte slutföras.',500);
+            return $temporary;
+        } catch(Throwable $error){
+            if($opened)$zip->close();
+            if(is_file($temporary))unlink($temporary);
+            throw $error;
+        }
+    }
     public static function listing(string $relative=''): array {
         $folders=[];$files=[];
         if($relative===''){

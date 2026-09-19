@@ -267,3 +267,6 @@
 .file-actions { white-space:nowrap; }
 .file-actions a { margin-right:.8rem; }
 @media(max-width:650px){ .file-browser-head { align-items:flex-start; flex-direction:column; } .file-table th:nth-child(2),.file-table td:nth-child(2),.file-table th:nth-child(3),.file-table td:nth-child(3) { display:none; } .file-table th,.file-table td { padding:.7rem; } .file-actions { white-space:normal; } .file-actions a { display:block; padding:.25rem 0; margin:0; } }
+
+.file-browser-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:.65rem; }
+@media(max-width:650px){ .file-browser-actions { width:100%; justify-content:stretch; } .file-browser-actions a { flex:1; text-align:center; } }

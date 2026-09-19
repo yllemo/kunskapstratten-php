@@ -12,6 +12,19 @@ function dispatch(string $route,string $method): never {
         render('files.html',['folder'=>$folder,'listing'=>FileBrowser::listing($folder),'bank'=>bank_id()],'files_page');
     }
     if ($route==='/files/download' && $method==='GET')send_file(FileBrowser::path($_GET['path']??null,true),false);
+    if ($route==='/files/archive' && $method==='GET'){
+        session_write_close();set_time_limit(0);
+        $archive=FileBrowser::archive();
+        $name=bank_id().'-'.(new DateTimeImmutable('now',new DateTimeZone('Europe/Stockholm')))->format('Y-m-d').'.zip';
+        try {
+            header('Content-Type: application/zip');
+            header('Content-Disposition: attachment; filename="'.$name.'"');
+            header('Content-Length: '.filesize($archive));
+            header('X-Content-Type-Options: nosniff');
+            readfile($archive);
+        } finally { unlink($archive); }
+        exit;
+    }
     if ($route==='/browse' && $method==='GET') browse_page();
     if ($route==='/api/stats' && $method==='GET') { $docs=$st->documents(); json_response(['documents'=>count($docs),'tags'=>count(array_unique(array_merge(...array_column($docs,'tags'))))]); }
     if ($route==='/new' && in_array($method,['GET','POST'])) {
