@@ -1224,3 +1224,26 @@ main {
 .api-key-row { display:flex; gap:.45rem; align-items:center; }
 .api-key-row input { flex:1; min-width:0; }
 .api-key-row button { width:auto; margin:0; white-space:nowrap; }
+
+/* Upload selection and window-wide drop target */
+.upload-intro { max-width:44rem; color:var(--text-secondary); line-height:1.6; }
+.upload-page .upload-form { max-width:54rem; }
+.upload-page .drop-zone { position:relative; min-height:13rem; gap:.65rem; }
+.upload-page .drop-zone:focus-within { outline:2px solid var(--gs-blue); outline-offset:3px; }
+.upload-page .drop-zone.has-files { border-style:solid; }
+.selected-files { padding:1rem 1.1rem; border:1px solid var(--border-color); border-radius:var(--radius); background:var(--bg-nav); }
+.selected-files-head { display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:.65rem; }
+.selected-files-head h2 { margin:0; font-size:1rem; }
+.selected-file-list { list-style:none; padding:0; margin:0; display:grid; gap:.35rem; max-height:18rem; overflow:auto; }
+.selected-file-item { display:flex; align-items:center; gap:.75rem; min-width:0; padding:.6rem .7rem; border:1px solid var(--border-color); border-radius:6px; background:var(--bg-color); }
+.selected-file-name { flex:1; min-width:0; overflow-wrap:anywhere; font-weight:600; font-size:.9rem; }
+.selected-file-size { flex:none; color:var(--text-secondary); font-size:.8rem; white-space:nowrap; }
+.selected-file-remove { flex:none; border:0; background:transparent; color:var(--link-color); font:inherit; font-size:.85rem; cursor:pointer; text-decoration:underline; }
+.selected-file-remove:hover { color:var(--gs-error); }
+.upload-drop-overlay { position:fixed; inset:0; z-index:1000; display:grid; place-items:center; padding:1rem; background:rgb(0 73 115 / .8); pointer-events:none; }
+.upload-drop-overlay[hidden] { display:none; }
+.upload-drop-overlay>div { display:grid; justify-items:center; gap:.45rem; width:min(36rem,100%); padding:2.5rem 1.5rem; border:3px dashed #fff; border-radius:16px; background:#fff; color:#133b53; text-align:center; box-shadow:0 20px 80px #0006; }
+.upload-drop-overlay span { font-size:2.5rem; color:var(--gs-blue); }
+.upload-drop-overlay strong { font-size:1.3rem; }
+.upload-drop-overlay small { font-size:.9rem; }
+@media(max-width:600px){ .selected-files-head { align-items:flex-start; } .selected-file-item { flex-wrap:wrap; } .selected-file-name { flex-basis:100%; } .selected-file-remove { margin-left:auto; min-height:40px; } }

@@ -433,3 +433,11 @@ content ignoreras av Git.
 Chattens skill-väljare använder samma diskreta fältstil på desktop och mobil.
 Den visar den aktiva skillens beskrivning när valet ändras och går att använda
 med tangentbord och touch.
+
+### Dra och släpp dokument
+
+På uppladdningssidan kan du släppa flera filer var som helst i fönstret
+eller välja dem via filväljaren. Valda filer visas med namn, storlek och
+sammanlagd storlek innan uppladdning. Du kan ta bort en fil eller rensa alla.
+Fler filer som släpps eller väljs läggs till i listan; samma fil läggs inte
+till två gånger. Uppladdningen sker först när du klickar **Ladda upp filer**.
