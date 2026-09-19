@@ -73,6 +73,7 @@ function settings(): array {
     $base = config();
     $settings=array_replace_recursive(['title'=>$base['title'], 'ai'=>$base['ai'], 'import'=>DocumentConverter::DEFAULTS, 'gui'=>['preview_enabled'=>false]], store()->json('data/settings.json'));
     // API keys are supplied by config.php or the current browser request, never bank settings.
+    $settings['title']=$base['title'];
     $settings['ai']['api_key']=$base['ai']['api_key'];
     return $settings;
 }

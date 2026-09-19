@@ -215,6 +215,9 @@ main {
   border-top: 1px solid var(--border-color);
 }
 
+.site-footer a { color:inherit; text-underline-offset:.18em; }
+.site-footer a:hover,.site-footer a:focus-visible { color:var(--link-color); }
+
 /* ---------- Toolbar / sök / taggar ---------- */
 
 .index-toolbar {
