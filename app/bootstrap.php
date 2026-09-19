@@ -12,8 +12,20 @@ function config(): array {
     static $config;
     if ($config === null) {
         $config = require dirname(__DIR__).'/config.example.php';
-        if (is_file(dirname(__DIR__).'/config.php')) $config = array_replace_recursive($config, require dirname(__DIR__).'/config.php');
-        if (getenv('KB_CONTENT_ROOT')) $config['content_root'] = getenv('KB_CONTENT_ROOT');
+        $rootConfig=dirname(__DIR__).'/config.php';
+        if(is_file($rootConfig))$config=array_replace_recursive($config,require $rootConfig);
+        // Resolve the mounted content directory before loading its persistent config.
+        $mountedRoot=getenv('KB_CONTENT_ROOT');
+        $contentRoot=$mountedRoot!==false&&$mountedRoot!==''?$mountedRoot:($config['content_root']??null);
+        if(!is_string($contentRoot)||$contentRoot==='')throw new RuntimeException('Ogiltig content_root i konfigurationen.',500);
+        $persistentConfig=rtrim($contentRoot,'/\\').'/config.php';
+        if(is_file($persistentConfig)){
+            $values=require $persistentConfig;
+            if(!is_array($values))throw new RuntimeException('content/config.php måste returnera en PHP-array.',500);
+            $config=array_replace_recursive($config,$values);
+        }
+        // A config inside content cannot move its own storage directory.
+        $config['content_root']=$contentRoot;
         if (getenv('KB_PASSWORD') !== false) $config['password'] = getenv('KB_PASSWORD');
     }
     return $config;

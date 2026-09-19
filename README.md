@@ -403,3 +403,29 @@ och **Instruktioner**. Ett tydligt namn gör skillen lätt att känna igen.
 Beskrivningen ska ange när skillen är relevant, vilket underlag den behöver
 och vilket resultat den ger; en AI-agent kan läsa den för att välja rätt skill.
 Instruktionerna beskriver själva utförandet efter att skillen valts.
+
+### Beständig konfiguration i OpenShift
+
+Du kan lägga `config.php` i projektroten **eller** direkt i den monterade
+`content`-mappen. `content/config.php` är lämplig när `content` ligger på en
+beständig volym som överlever uppdateringar. Filen har samma format som
+`config.example.php` och kan innehålla bara de värden du ändrar:
+
+```php
+<?php
+return [
+    'password' => 'byt-till-ett-eget-losenord',
+    'ai' => ['api_key' => 'din-servernyckel'],
+];
+```
+
+Ordningen är: `config.example.php` → rotens `config.php` →
+`content/config.php` → miljövariabeln `KB_PASSWORD`. Om båda config-filerna
+finns vinner alltså värden i `content/config.php`. Mappen bestäms först av
+`KB_CONTENT_ROOT` om den är satt, annars av rotens `content_root` eller
+standardmappen `content`; en config-fil inuti content kan inte flytta sin
+egen mapp. Rotens `config.php` behövs inte när den beständiga filen räcker.
+
+Webbserverns `.htaccess` och `web.config` blockerar direkt åtkomst till
+`content`, men montera helst mappen utanför publik webbrot. `config.php` i
+content ignoreras av Git.
