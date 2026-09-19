@@ -11,6 +11,7 @@ function dispatch(string $route,string $method): never {
         if(!is_string($folder))throw new RuntimeException('Ogiltig mapp.',400);
         render('files.html',['folder'=>$folder,'listing'=>FileBrowser::listing($folder),'bank'=>bank_id()],'files_page');
     }
+    if ($route==='/files/open' && $method==='GET')send_file(FileBrowser::path($_GET['path']??null,true),true);
     if ($route==='/files/download' && $method==='GET')send_file(FileBrowser::path($_GET['path']??null,true),false);
     if ($route==='/files/archive' && $method==='GET'){
         session_write_close();set_time_limit(0);
